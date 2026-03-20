@@ -2,36 +2,21 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } fr
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { getTemplateVars, getFilesToScaffold, getNextSteps } from '../utils/agents.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(__dirname, '..', 'templates');
 
+const PKG = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+
 export async function scaffold(flags) {
   const cwd = process.cwd();
   console.log('\n  create-dual-agent-loop\n');
-  console.log('  Scaffolding the Builder/Judge dual-agent protocol...\n');
 
   const config = await gatherConfig(flags);
-
-  const files = [
-    // Protocol files
-    { src: 'protocol/PROTOCOL.md', dest: 'agent-loop/PROTOCOL.md' },
-    { src: 'protocol/ANTIPATTERNS.md', dest: 'agent-loop/ANTIPATTERNS.md' },
-
-    // Slash commands
-    { src: 'commands/loop.build.md', dest: '.claude/commands/loop.build.md' },
-    { src: 'commands/loop.status.md', dest: '.claude/commands/loop.status.md' },
-    { src: 'commands/loop.backlog.md', dest: '.claude/commands/loop.backlog.md' },
-    { src: 'commands/loop.close.md', dest: '.claude/commands/loop.close.md' },
-
-    // Agent configs
-    { src: 'agents/CODEX.md', dest: 'CODEX.md' },
-    { src: 'agents/AGENTS.md', dest: 'AGENTS.md' },
-    { src: 'agents/CHEATSHEET.md', dest: 'CHEATSHEET.md' },
-
-    // Backlog
-    { src: 'task/backlog.md', dest: 'specs/backlog.md' },
-  ];
+  console.log('  Scaffolding the Builder/Judge protocol...\n');
+  const files = getFilesToScaffold(config);
+  const vars = getTemplateVars(config);
 
   let created = 0;
   let skipped = 0;
@@ -43,16 +28,20 @@ export async function scaffold(flags) {
       skipped++;
       continue;
     }
-    mkdirSync(dirname(destPath), { recursive: true });
-    const content = loadTemplate(file.src, config);
-    writeFileSync(destPath, content);
+    try {
+      mkdirSync(dirname(destPath), { recursive: true });
+      const content = loadTemplate(file.src, vars);
+      writeFileSync(destPath, content);
+    } catch (err) {
+      throw new Error(`Failed to create ${file.dest}: ${err.message}`);
+    }
     console.log(`  create   ${file.dest}`);
     created++;
   }
 
   // CLAUDE.md — append, never overwrite
   const claudeMdPath = join(cwd, 'CLAUDE.md');
-  const claudeSection = loadTemplate('agents/CLAUDE.md.section', config);
+  const claudeSection = loadTemplate('agents/CLAUDE.md.section', vars);
   if (existsSync(claudeMdPath)) {
     const existing = readFileSync(claudeMdPath, 'utf-8');
     if (existing.includes('Builder-Judge Workflow')) {
@@ -75,11 +64,12 @@ export async function scaffold(flags) {
     skipped++;
   } else {
     writeFileSync(configPath, JSON.stringify({
-      version: '0.1.0',
+      version: PKG.version,
       coordinator: config.coordinator,
+      agent_mode: config.agentMode,
+      builder: config.builderAgent,
+      judge: config.judgeAgent,
       release_mode: config.releaseMode,
-      builder: 'claude',
-      judge: 'codex',
       max_rounds: config.maxRounds,
       specs_dir: 'specs',
       loop_dir: 'agent-loop',
@@ -89,16 +79,18 @@ export async function scaffold(flags) {
   }
 
   console.log(`\n  Done. ${created} created, ${skipped} skipped.\n`);
-  console.log('  Next steps:');
-  console.log('    1. Review CLAUDE.md and CODEX.md');
-  console.log('    2. In Claude Code: /loop.build new <describe your first task>');
-  console.log('    3. In Codex: judge <task-id>');
+  for (const line of getNextSteps(config)) {
+    console.log(line);
+  }
   console.log('');
 }
 
 async function gatherConfig(flags) {
   const defaults = {
     coordinator: getGitUserName() || 'Coordinator',
+    agentMode: 'dual',
+    builderAgent: 'claude',
+    judgeAgent: 'codex',
     releaseMode: 'github-pr',
     maxRounds: 5,
   };
@@ -108,48 +100,81 @@ async function gatherConfig(flags) {
   let Enquirer;
   try {
     Enquirer = (await import('enquirer')).default;
-  } catch {
-    console.log('  (using defaults — install enquirer for interactive prompts)\n');
-    return defaults;
+  } catch (err) {
+    if (err.code === 'ERR_MODULE_NOT_FOUND' || err.code === 'MODULE_NOT_FOUND') {
+      console.log('  (using defaults — install enquirer for interactive prompts)\n');
+      return defaults;
+    }
+    throw err;
   }
 
   const enquirer = new Enquirer();
 
-  const answers = await enquirer.prompt([
-    {
-      type: 'input',
-      name: 'coordinator',
-      message: 'Coordinator name',
-      initial: defaults.coordinator,
-    },
-    {
+  let agentMode, answers;
+  try {
+    ({ agentMode } = await enquirer.prompt({
       type: 'select',
-      name: 'releaseMode',
-      message: 'Release mode',
-      choices: ['github-pr', 'gitlab-mr', 'local'],
+      name: 'agentMode',
+      message: 'Agent setup',
+      choices: [
+        { name: 'dual', message: 'Dual agent (Claude Code builds, Codex judges)' },
+        { name: 'single', message: 'Single agent (Claude Code plays both roles)' },
+      ],
       initial: 0,
-    },
-    {
-      type: 'numeral',
-      name: 'maxRounds',
-      message: 'Max rounds per phase',
-      initial: defaults.maxRounds,
-    },
-  ]);
+    }));
+
+    answers = await enquirer.prompt([
+      {
+        type: 'input',
+        name: 'coordinator',
+        message: 'Coordinator name',
+        initial: defaults.coordinator,
+      },
+      {
+        type: 'select',
+        name: 'releaseMode',
+        message: 'Release mode',
+        choices: ['github-pr', 'gitlab-mr', 'local'],
+        initial: 0,
+      },
+      {
+        type: 'numeral',
+        name: 'maxRounds',
+        message: 'Max rounds per phase',
+        initial: defaults.maxRounds,
+      },
+    ]);
+  } catch {
+    console.log('\n  Setup cancelled. Run again when ready.\n');
+    process.exit(0);
+  }
+
+  const builderAgent = 'claude';
+  const judgeAgent = agentMode === 'single' ? 'claude' : 'codex';
 
   return {
     coordinator: answers.coordinator || defaults.coordinator,
+    agentMode,
+    builderAgent,
+    judgeAgent,
     releaseMode: answers.releaseMode || defaults.releaseMode,
     maxRounds: answers.maxRounds || defaults.maxRounds,
   };
 }
 
-function loadTemplate(name, config) {
+function loadTemplate(name, vars) {
   const filePath = join(TEMPLATES_DIR, name);
-  let content = readFileSync(filePath, 'utf-8');
-  content = content.replaceAll('{{COORDINATOR_NAME}}', config.coordinator);
-  content = content.replaceAll('{{RELEASE_MODE}}', config.releaseMode);
-  content = content.replaceAll('{{MAX_ROUNDS}}', String(config.maxRounds));
+  let content;
+  try {
+    content = readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    throw new Error(`Missing template "${name}": ${err.message}`);
+  }
+
+  for (const [key, value] of Object.entries(vars)) {
+    content = content.replaceAll(key, value);
+  }
+
   return content;
 }
 

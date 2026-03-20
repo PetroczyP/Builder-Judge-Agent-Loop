@@ -67,7 +67,7 @@ This is the core builder loop. Read the task context and produce output appropri
 
 1. Read `task.md` — goal, scope, constraints, acceptance criteria
 2. Read `status.json` — current phase, round, state
-3. **State guard**: If state is NOT `ready_for_builder` and NOT `needs_revision`, STOP and tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first. Send to Codex with `judge <task-id>`."
+3. **State guard**: If state is NOT `ready_for_builder` and NOT `needs_revision`, STOP and tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first. Send to Codex with `judge <task-id>`"
 4. If `judge.md` exists, read the **latest round** — note every finding by ID (B-1, H-1, M-1, L-1)
 5. Read **Phase Summaries** from both `builder-archive.md` and `judge-archive.md` (if they exist)
 6. If the state is `accepted` and no phase override was given, tell the user the current phase is done and suggest the next phase
@@ -221,4 +221,4 @@ Tell the user concisely:
 - Round number
 - What you produced or changed (files list)
 - That it's ready for the judge
-- Suggest: "Send to Codex with `judge NNN-task-name`"
+- Suggest: "Send to Codex with `judge <task-id>`"

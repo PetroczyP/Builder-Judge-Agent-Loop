@@ -16,11 +16,11 @@ If you are working on anything under `agent-loop/`, you MUST also read:
 
 ### Builder / Judge Roles
 
-- **Claude Code** is the builder
-- **Codex** is the judge
+- **{{BUILDER_AGENT_NAME}}** is the builder
+- **{{JUDGE_AGENT_NAME}}** is the judge
 - **{{COORDINATOR_NAME}}** is the coordinator and final decision-maker
 
-Codex must not drift into being the primary builder when acting as judge.
+{{JUDGE_AGENT_NAME}} must not drift into being the primary builder when acting as judge.
 
 ### File Ownership in Agent Loop
 
@@ -33,7 +33,7 @@ When operating inside `agent-loop/`:
 
 ### Quick Reference
 
-**Builder (Claude Code):**
+**Builder ({{BUILDER_AGENT_NAME}}):**
 1. Read `task.md` for goal, scope, acceptance criteria
 2. Read `judge.md` if it exists (previous round feedback)
 3. Read **Phase Summaries** from both archive files (if they exist)
@@ -44,7 +44,7 @@ When operating inside `agent-loop/`:
 6. Update `status.json`: state → `ready_for_judge`
 7. Do NOT edit `judge.md` or `judge-archive.md`
 
-**Judge (Codex):**
+**Judge ({{JUDGE_AGENT_NAME}}):**
 1. Read `task.md` for goal, scope, acceptance criteria
 2. Read `builder.md` (latest round)
 3. Review any changed artifacts referenced by the builder

@@ -1,0 +1,24 @@
+{
+  "task_id": "001-single-agent-mode",
+  "phase": "release",
+  "state": "accepted",
+  "round": 2,
+  "max_rounds": 5,
+  "builder": "claude",
+  "judge": "codex",
+  "verdict": "accepted",
+  "updated_at": "2026-03-20T23:30:01Z",
+  "history": [
+    { "round": 1, "phase": "build", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T22:00:00Z" },
+    { "round": 1, "phase": "build", "actor": "judge", "verdict": "needs_revision", "timestamp": "2026-03-20T22:00:01Z" },
+    { "round": 2, "phase": "build", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T22:30:00Z" },
+    { "round": 2, "phase": "build", "actor": "judge", "verdict": "escalated", "timestamp": "2026-03-20T22:30:01Z" },
+    { "round": 3, "phase": "build", "actor": "coordinator", "verdict": "resolved_escalation", "timestamp": "2026-03-20T22:45:00Z" },
+    { "round": 3, "phase": "build", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T23:00:00Z" },
+    { "round": 3, "phase": "build", "actor": "judge", "verdict": "accepted", "timestamp": "2026-03-20T23:00:01Z" },
+    { "round": 1, "phase": "release", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T23:15:00Z" },
+    { "round": 1, "phase": "release", "actor": "judge", "verdict": "needs_revision", "timestamp": "2026-03-20T23:15:01Z" },
+    { "round": 2, "phase": "release", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T23:30:00Z" },
+    { "round": 2, "phase": "release", "actor": "judge", "verdict": "accepted", "timestamp": "2026-03-20T23:30:01Z" }
+  ]
+}

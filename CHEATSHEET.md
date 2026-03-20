@@ -55,8 +55,8 @@ escalated         → any                (you decide)
 ```
 agent-loop/NNN-task-name/
   task.md            ← you own this (goal, scope, ACs)
-  builder.md         ← Claude's work (append-only)
-  judge.md           ← Codex's reviews (append-only)
+  builder.md         ← builder's work (append-only)
+  judge.md           ← judge's reviews (append-only)
   builder-archive.md ← archived builder rounds + phase summaries
   judge-archive.md   ← archived judge rounds + phase summaries
   status.json        ← machine state

@@ -9,8 +9,8 @@ This protocol governs collaboration between the builder agent and the judge agen
 
 | Role | Agent | Owns |
 |------|-------|------|
-| **Builder** | Claude Code | Design proposals, spec changes, implementation, tests, test execution, evidence |
-| **Judge** | Codex | Review findings, correctness analysis, consistency checks, quality-gate verdicts, escalation |
+| **Builder** | {{BUILDER_AGENT_NAME}} | Design proposals, spec changes, implementation, tests, test execution, evidence |
+| **Judge** | {{JUDGE_AGENT_NAME}} | Review findings, correctness analysis, consistency checks, quality-gate verdicts, escalation |
 | **Coordinator** | Human | Product direction, tradeoff decisions, scope, arbitration, lightweight-mode approval |
 
 The builder produces. The judge evaluates. Neither edits the other's artifact.
@@ -215,8 +215,8 @@ Phase summaries MUST NOT include:
   "state": "ready_for_builder",
   "round": 1,
   "max_rounds": 5,
-  "builder": "claude",
-  "judge": "codex",
+  "builder": "{{BUILDER_AGENT_ID}}",
+  "judge": "{{JUDGE_AGENT_ID}}",
   "verdict": null,
   "updated_at": "2026-03-20T10:00:00Z",
   "history": [

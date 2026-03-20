@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getTemplateVars, getFilesToScaffold } from '../src/utils/agents.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -18,11 +19,17 @@ const TEMPLATES = join(ROOT, 'src', 'templates');
 // Config for this project's own dogfooding
 const config = JSON.parse(readFileSync(join(ROOT, '.dual-agent-loop.json'), 'utf-8'));
 
-const vars = {
-  '{{COORDINATOR_NAME}}': config.coordinator,
-  '{{RELEASE_MODE}}': config.release_mode,
-  '{{MAX_ROUNDS}}': String(config.max_rounds),
+// Build full config object expected by getTemplateVars
+const fullConfig = {
+  coordinator: config.coordinator,
+  agentMode: config.agent_mode || 'dual',
+  builderAgent: config.builder || 'claude',
+  judgeAgent: config.judge || 'codex',
+  releaseMode: config.release_mode,
+  maxRounds: config.max_rounds,
 };
+
+const vars = getTemplateVars(fullConfig);
 
 function render(content) {
   for (const [key, value] of Object.entries(vars)) {
@@ -40,19 +47,14 @@ function generate(templatePath, destPath) {
 
 console.log('\n  scaffold-self: generating project files from src/templates/\n');
 
-// Protocol files
-generate('protocol/PROTOCOL.md', 'agent-loop/PROTOCOL.md');
-generate('protocol/ANTIPATTERNS.md', 'agent-loop/ANTIPATTERNS.md');
+// Generate all files for the configured agent mode
+// Skip project-specific files that shouldn't be overwritten
+// CLAUDE.md.section is handled separately by scaffold.js (append-not-overwrite logic)
+// and is intentionally not regenerated here — it's project-specific once created.
+const SKIP_DESTS = new Set(['specs/backlog.md']);
+const files = getFilesToScaffold(fullConfig).filter(f => !SKIP_DESTS.has(f.dest));
+for (const file of files) {
+  generate(file.src, file.dest);
+}
 
-// Slash commands
-generate('commands/loop.build.md', '.claude/commands/loop.build.md');
-generate('commands/loop.status.md', '.claude/commands/loop.status.md');
-generate('commands/loop.backlog.md', '.claude/commands/loop.backlog.md');
-generate('commands/loop.close.md', '.claude/commands/loop.close.md');
-
-// Agent configs
-generate('agents/CODEX.md', 'CODEX.md');
-generate('agents/AGENTS.md', 'AGENTS.md');
-generate('agents/CHEATSHEET.md', 'CHEATSHEET.md');
-
-console.log('\n  Done. CLAUDE.md and specs/backlog.md are not overwritten (project-specific).\n');
+console.log('\n  Done. specs/backlog.md is not overwritten (project-specific).\n');

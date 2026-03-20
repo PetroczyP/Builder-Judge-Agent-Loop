@@ -3,10 +3,10 @@
 
 ## Builder-Judge Workflow (added by create-dual-agent-loop)
 
-This project uses the dual-agent-loop protocol for structured development.
+This project uses the builder/judge protocol for structured development.
 
-- **Builder**: Claude Code — use `/loop.build` commands
-- **Judge**: Codex — use `judge <task-id>`
+- **Builder**: {{BUILDER_AGENT_NAME}} — use `/loop.build` commands
+- **Judge**: {{JUDGE_AGENT_NAME}} — use `{{JUDGE_COMMAND}}`
 - **Coordinator**: {{COORDINATOR_NAME}} — final decision maker
 
 See `agent-loop/PROTOCOL.md` for full rules.
