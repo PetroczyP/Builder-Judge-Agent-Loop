@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "coordinator": "Peter",
+  "release_mode": "github-pr",
+  "builder": "claude",
+  "judge": "codex",
+  "max_rounds": 5,
+  "speckit_mode": "lite",
+  "specs_dir": "specs",
+  "loop_dir": "agent-loop"
+}

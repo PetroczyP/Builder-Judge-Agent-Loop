@@ -1,0 +1,36 @@
+{
+  "name": "create-dual-agent-loop",
+  "version": "0.1.0",
+  "description": "Scaffold the Builder/Judge dual-agent collaboration protocol into any project. Structured SDLC with quality gates for Claude Code and Codex.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "create-dual-agent-loop": "./bin/create-dual-agent-loop.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "scaffold-self": "node scripts/scaffold-self.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent",
+    "dual-agent",
+    "builder-judge",
+    "sdlc",
+    "spec-driven-development",
+    "ai-coding",
+    "create"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "enquirer": "^2.4.1"
+  }
+}

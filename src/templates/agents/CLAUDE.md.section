@@ -1,0 +1,21 @@
+
+---
+
+## Builder-Judge Workflow (added by create-dual-agent-loop)
+
+This project uses the dual-agent-loop protocol for structured development.
+
+- **Builder**: Claude Code — use `/loop.build` commands
+- **Judge**: Codex — use `judge <task-id>`
+- **Coordinator**: {{COORDINATOR_NAME}} — final decision maker
+
+See `agent-loop/PROTOCOL.md` for full rules.
+See `AGENTS.md` for shared agent instructions.
+See `agent-loop/ANTIPATTERNS.md` for known anti-patterns to avoid.
+
+### Key rules:
+- Never edit `judge.md` or `judge-archive.md`
+- Always read `task.md` and `status.json` before working
+- Check state guards: only work when state is `ready_for_builder` or `needs_revision`
+- Run CoVe (Chain of Verification) before marking ready for judge
+- Check ANTIPATTERNS.md before finalizing each round
