@@ -1,9 +1,10 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "coordinator": "Peter",
-  "release_mode": "github-pr",
+  "agent_mode": "dual",
   "builder": "claude",
   "judge": "codex",
+  "release_mode": "github-pr",
   "max_rounds": 5,
   "speckit_mode": "lite",
   "specs_dir": "specs",

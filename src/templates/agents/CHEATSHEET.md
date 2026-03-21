@@ -4,7 +4,7 @@ Quick reference for the coordinator.
 
 ## Commands
 
-### In Claude Code (Builder)
+### In {{BUILDER_AGENT_NAME}} (Builder)
 
 | Command | What it does |
 |---------|-------------|
@@ -19,11 +19,11 @@ Quick reference for the coordinator.
 | `/loop.backlog pick <#>` | Promote backlog item to task |
 | `/loop.close <task-id>` | Generate closure + release |
 
-### In Codex (Judge)
+### In {{JUDGE_AGENT_NAME}} (Judge)
 
 | Command | What it does |
 |---------|-------------|
-| `judge <task-id>` | Judge the builder's latest round |
+| `{{JUDGE_COMMAND}}` | Judge the builder's latest round |
 
 ## Workflow
 
@@ -55,8 +55,8 @@ escalated         → any                (you decide)
 ```
 agent-loop/NNN-task-name/
   task.md            ← you own this (goal, scope, ACs)
-  builder.md         ← Claude's work (append-only)
-  judge.md           ← Codex's reviews (append-only)
+  builder.md         ← builder's work (append-only)
+  judge.md           ← judge's reviews (append-only)
   builder-archive.md ← archived builder rounds + phase summaries
   judge-archive.md   ← archived judge rounds + phase summaries
   status.json        ← machine state
