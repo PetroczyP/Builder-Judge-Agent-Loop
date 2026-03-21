@@ -69,10 +69,10 @@ All task files are in `TASK_DIR = agent-loop/<task-id>/` (resolved from Step 1).
 
 1. Read `TASK_DIR/task.md` — goal, scope, constraints, acceptance criteria
 2. Read `TASK_DIR/status.json` — current phase, round, state
-3. **State guard**: If state is NOT `ready_for_builder` and NOT `needs_revision`, STOP and tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first. {{JUDGE_INVOKE_INSTRUCTION}}"
-4. If `TASK_DIR/judge.md` exists, read the **latest round** — note every finding by ID (B-1, H-1, M-1, L-1)
-5. Read **Phase Summaries** from both `TASK_DIR/builder-archive.md` and `TASK_DIR/judge-archive.md` (if they exist)
-6. If the state is `accepted` and no phase override was given, tell the user the current phase is done and suggest the next phase
+3. If the state is `accepted` and no phase override was given, tell the user the current phase is done and suggest the next phase. Do not proceed further.
+4. **State guard**: If state is NOT `ready_for_builder` and NOT `needs_revision`, STOP and tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first. {{JUDGE_INVOKE_INSTRUCTION}}"
+5. If `TASK_DIR/judge.md` exists, read the **latest round** — note every finding by ID (B-1, H-1, M-1, L-1)
+6. Read **Phase Summaries** from both `TASK_DIR/builder-archive.md` and `TASK_DIR/judge-archive.md` (if they exist)
 
 ---
 
@@ -173,7 +173,7 @@ Append (never overwrite) a new section:
 ### Responses to Judge Findings
 - H-1: addressed by ...
 - M-2: declined because ...
-(omit for Round 1 or if no judge.md exists)
+(omit for Round 1 or if no TASK_DIR/judge.md exists)
 
 ### Verification
 - Checked: [what was web-searched or CoVe self-verified]
@@ -207,7 +207,7 @@ This is mandatory for `specify`, `design`, and `build` phases. Optional for `tes
 
 ---
 
-### Step 6: Update status.json
+### Step 6: Update TASK_DIR/status.json
 
 - Set `state` to `"ready_for_judge"`
 - Update `round` to the current round number

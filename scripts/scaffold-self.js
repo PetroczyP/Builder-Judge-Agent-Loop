@@ -30,7 +30,7 @@ const fullConfig = {
   coordinator: config.coordinator,
   agentMode: config.agent_mode || 'dual',
   builderAgent: config.builder || 'claude',
-  judgeAgent: config.judge || 'codex',
+  judgeAgent: config.judge || ((config.agent_mode || 'dual') === 'single' ? 'claude' : 'codex'),
   releaseMode: config.release_mode,
   maxRounds: config.max_rounds,
 };
