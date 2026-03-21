@@ -108,6 +108,8 @@ export function getNextSteps(config) {
   const judgeAgent = config.judgeAgent || (agentMode === 'single' ? 'claude' : 'codex');
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
+  if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
+  if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
 
   if (agentMode === 'single') {
     return [

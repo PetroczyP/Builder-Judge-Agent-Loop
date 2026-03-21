@@ -214,7 +214,7 @@ Phase summaries MUST NOT include:
   "phase": "design",
   "state": "ready_for_builder",
   "round": 1,
-  "max_rounds": 5,
+  "max_rounds": {{MAX_ROUNDS}},
   "builder": "{{BUILDER_AGENT_ID}}",
   "judge": "{{JUDGE_AGENT_ID}}",
   "verdict": null,
@@ -241,7 +241,7 @@ Phase summaries MUST NOT include:
 
 - **Builder called when state is NOT `ready_for_builder` or `needs_revision`**: Refuse to proceed. Tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first."
 - **Judge called when state is NOT `ready_for_judge`**: Refuse to proceed. Tell the user: "Cannot proceed — current state is `<state>`. The builder needs to work first."
-- **Round >= 5 soft flag**: Both agents note "Round N (exceeds soft limit of 5) — consider whether escalation is needed" but do NOT block.
+- **Round >= {{MAX_ROUNDS}} soft flag**: Both agents note "Round N (exceeds soft limit of {{MAX_ROUNDS}}) — consider whether escalation is needed" but do NOT block.
 - **Round = max_rounds**: Auto-escalate to prevent infinite loops.
 
 ## Standard Loop
@@ -293,7 +293,7 @@ Determine the round number (match the builder's latest round).
 Append a new section using the Judge Output Format (see below). Previous rounds may only be moved to `judge-archive.md` via the Context Management process — never deleted or modified in place.
 
 **Soft round limit check:** If this is Round 5 or above, add a note at the top of the round:
-> **Note**: This is Round N (soft limit of 5 exceeded). Consider whether escalation to the coordinator would be more productive than continuing iteration.
+> **Note**: This is Round N (soft limit of {{MAX_ROUNDS}} exceeded). Consider whether escalation to the coordinator would be more productive than continuing iteration.
 
 This is informational, not blocking.
 
