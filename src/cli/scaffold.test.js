@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getTemplateVars, getFilesToScaffold, getNextSteps, AGENTS } from '../utils/agents.js';
@@ -139,6 +139,16 @@ describe('getFilesToScaffold', () => {
     assert.ok(!dests.includes('CODEX.md'));
     assert.ok(dests.includes('.claude/agents/judge.md'));
     assert.ok(dests.includes('.claude/commands/loop.review.md'));
+  });
+
+  it('all src paths resolve to existing template files', () => {
+    for (const mode of ['single', 'dual']) {
+      const files = getFilesToScaffold({ agentMode: mode });
+      for (const file of files) {
+        const fullPath = join(TEMPLATES, file.src);
+        assert.ok(existsSync(fullPath), `${mode} mode references missing template: ${file.src}`);
+      }
+    }
   });
 
   it('both modes include common files', () => {

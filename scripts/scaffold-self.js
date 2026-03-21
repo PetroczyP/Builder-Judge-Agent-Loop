@@ -17,7 +17,13 @@ const ROOT = join(__dirname, '..');
 const TEMPLATES = join(ROOT, 'src', 'templates');
 
 // Config for this project's own dogfooding
-const config = JSON.parse(readFileSync(join(ROOT, '.dual-agent-loop.json'), 'utf-8'));
+let config;
+try {
+  config = JSON.parse(readFileSync(join(ROOT, '.dual-agent-loop.json'), 'utf-8'));
+} catch (err) {
+  console.error(`  Error reading .dual-agent-loop.json: ${err.message}`);
+  process.exit(1);
+}
 
 // Build full config object expected by getTemplateVars
 const fullConfig = {
@@ -39,10 +45,15 @@ function render(content) {
 }
 
 function generate(templatePath, destPath) {
-  const content = render(readFileSync(join(TEMPLATES, templatePath), 'utf-8'));
-  mkdirSync(dirname(join(ROOT, destPath)), { recursive: true });
-  writeFileSync(join(ROOT, destPath), content);
-  console.log(`  generate  ${destPath}`);
+  try {
+    const content = render(readFileSync(join(TEMPLATES, templatePath), 'utf-8'));
+    mkdirSync(dirname(join(ROOT, destPath)), { recursive: true });
+    writeFileSync(join(ROOT, destPath), content);
+    console.log(`  generate  ${destPath}`);
+  } catch (err) {
+    console.error(`  Error generating ${destPath} from ${templatePath}: ${err.message}`);
+    process.exit(1);
+  }
 }
 
 console.log('\n  scaffold-self: generating project files from src/templates/\n');

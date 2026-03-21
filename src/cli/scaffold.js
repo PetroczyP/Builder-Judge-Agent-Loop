@@ -40,21 +40,25 @@ export async function scaffold(flags) {
   }
 
   // CLAUDE.md — append, never overwrite
-  const claudeMdPath = join(cwd, 'CLAUDE.md');
-  const claudeSection = loadTemplate('agents/CLAUDE.md.section', vars);
-  if (existsSync(claudeMdPath)) {
-    const existing = readFileSync(claudeMdPath, 'utf-8');
-    if (existing.includes('Builder-Judge Workflow')) {
-      console.log('  skip     CLAUDE.md (section already exists)');
+  try {
+    const claudeMdPath = join(cwd, 'CLAUDE.md');
+    const claudeSection = loadTemplate('agents/CLAUDE.md.section', vars);
+    if (existsSync(claudeMdPath)) {
+      const existing = readFileSync(claudeMdPath, 'utf-8');
+      if (existing.includes('Builder-Judge Workflow')) {
+        console.log('  skip     CLAUDE.md (section already exists)');
+      } else {
+        appendFileSync(claudeMdPath, '\n' + claudeSection);
+        console.log('  append   CLAUDE.md (added Builder-Judge Workflow section)');
+        created++;
+      }
     } else {
-      appendFileSync(claudeMdPath, '\n' + claudeSection);
-      console.log('  append   CLAUDE.md (added Builder-Judge Workflow section)');
+      writeFileSync(claudeMdPath, claudeSection);
+      console.log('  create   CLAUDE.md');
       created++;
     }
-  } else {
-    writeFileSync(claudeMdPath, claudeSection);
-    console.log('  create   CLAUDE.md');
-    created++;
+  } catch (err) {
+    throw new Error(`Failed to update CLAUDE.md: ${err.message}`);
   }
 
   // Config file
@@ -63,17 +67,21 @@ export async function scaffold(flags) {
     console.log('  skip     .dual-agent-loop.json (exists)');
     skipped++;
   } else {
-    writeFileSync(configPath, JSON.stringify({
-      version: PKG.version,
-      coordinator: config.coordinator,
-      agent_mode: config.agentMode,
-      builder: config.builderAgent,
-      judge: config.judgeAgent,
-      release_mode: config.releaseMode,
-      max_rounds: config.maxRounds,
-      specs_dir: 'specs',
-      loop_dir: 'agent-loop',
-    }, null, 2) + '\n');
+    try {
+      writeFileSync(configPath, JSON.stringify({
+        version: PKG.version,
+        coordinator: config.coordinator,
+        agent_mode: config.agentMode,
+        builder: config.builderAgent,
+        judge: config.judgeAgent,
+        release_mode: config.releaseMode,
+        max_rounds: config.maxRounds,
+        specs_dir: 'specs',
+        loop_dir: 'agent-loop',
+      }, null, 2) + '\n');
+    } catch (err) {
+      throw new Error(`Failed to create .dual-agent-loop.json: ${err.message}`);
+    }
     console.log('  create   .dual-agent-loop.json');
     created++;
   }
@@ -144,21 +152,24 @@ async function gatherConfig(flags) {
         initial: defaults.maxRounds,
       },
     ]);
-  } catch {
-    console.log('\n  Setup cancelled. Run again when ready.\n');
-    process.exit(0);
+  } catch (err) {
+    if (!err || err === '') {
+      console.log('\n  Setup cancelled. Run again when ready.\n');
+      process.exit(0);
+    }
+    throw err;
   }
 
   const builderAgent = 'claude';
   const judgeAgent = agentMode === 'single' ? 'claude' : 'codex';
 
   return {
-    coordinator: answers.coordinator || defaults.coordinator,
+    coordinator: answers.coordinator ?? defaults.coordinator,
     agentMode,
     builderAgent,
     judgeAgent,
-    releaseMode: answers.releaseMode || defaults.releaseMode,
-    maxRounds: answers.maxRounds || defaults.maxRounds,
+    releaseMode: answers.releaseMode ?? defaults.releaseMode,
+    maxRounds: answers.maxRounds ?? defaults.maxRounds,
   };
 }
 
