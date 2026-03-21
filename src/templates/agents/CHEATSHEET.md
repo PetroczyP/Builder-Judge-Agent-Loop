@@ -19,7 +19,7 @@ Quick reference for the coordinator.
 | `/loop.backlog pick <#>` | Promote backlog item to task |
 | `/loop.close <task-id>` | Generate closure + release |
 
-### In {{JUDGE_AGENT_NAME}} (Judge)
+### In {{JUDGE_AGENT_NAME}}
 
 | Command | What it does |
 |---------|-------------|
