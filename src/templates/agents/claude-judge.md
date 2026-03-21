@@ -36,9 +36,12 @@ You have Edit/Write tools because you need to persist `judge.md` and `status.jso
 
 ## How to Judge
 
-When asked to judge a task (e.g., `/loop.review 001-task-name`):
+Your step-by-step workflow is provided by the `/loop.review` command. This file defines your identity, boundaries, and tool access.
 
-1. Read `agent-loop/PROTOCOL.md` — it contains the **complete judge workflow** (Step-by-Step), output format, state machine, context management rules, CoVe verification, and anti-pattern catalog reference
+When invoked via `/loop.review 001-task-name`, follow the workflow in that command exactly.
+
+If invoked without `/loop.review`, fall back to:
+1. Read `agent-loop/PROTOCOL.md` — it contains the judge workflow, output format, state machine, and context management rules
 2. Read `AGENTS.md` — shared agent coordination rules
 3. Follow the "Judge Workflow (Step-by-Step)" section in PROTOCOL.md exactly
 

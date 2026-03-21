@@ -7,14 +7,22 @@ import { getTemplateVars, getFilesToScaffold, getNextSteps } from '../utils/agen
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(__dirname, '..', 'templates');
 
-const PKG = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+let PKG;
+try {
+  PKG = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+} catch (err) {
+  throw new Error(`Failed to read package.json (installation may be corrupt): ${err.message}`);
+}
 
 export async function scaffold(flags) {
   const cwd = process.cwd();
   console.log('\n  create-dual-agent-loop\n');
 
   const config = await gatherConfig(flags);
-  if (!config) return;
+  if (!config) {
+    process.exitCode = 1;
+    return;
+  }
   console.log('  Scaffolding the Builder/Judge protocol...\n');
   const files = getFilesToScaffold(config);
   const vars = getTemplateVars(config);
@@ -158,7 +166,7 @@ async function gatherConfig(flags) {
       console.log('\n  Setup cancelled. Run again when ready.\n');
       return null;
     }
-    throw err;
+    throw err instanceof Error ? err : new Error(String(err));
   }
 
   const builderAgent = 'claude';
@@ -184,6 +192,9 @@ function loadTemplate(name, vars) {
   }
 
   for (const [key, value] of Object.entries(vars)) {
+    if (value === undefined || value === null) {
+      throw new Error(`Template variable ${key} has no value (got ${value})`);
+    }
     content = content.split(key).join(String(value));
   }
 

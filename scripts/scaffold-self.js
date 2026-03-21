@@ -25,6 +25,14 @@ try {
   process.exit(1);
 }
 
+// Validate required config keys before proceeding
+const REQUIRED_KEYS = ['coordinator', 'agent_mode', 'builder', 'judge', 'release_mode', 'max_rounds'];
+const missing = REQUIRED_KEYS.filter(k => !(k in config));
+if (missing.length > 0) {
+  console.error(`  Error: .dual-agent-loop.json is missing keys: ${missing.join(', ')}`);
+  process.exit(1);
+}
+
 // Build full config object expected by getTemplateVars
 const fullConfig = {
   coordinator: config.coordinator,
@@ -39,7 +47,7 @@ const vars = getTemplateVars(fullConfig);
 
 function render(content) {
   for (const [key, value] of Object.entries(vars)) {
-    content = content.replaceAll(key, value);
+    content = content.split(key).join(String(value));
   }
   return content;
 }

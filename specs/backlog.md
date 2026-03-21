@@ -16,7 +16,8 @@ Use `/loop.backlog pick <number>` to promote an item to a task.
 | 7 | Validate getFilesToScaffold src paths exist on disk — catch template path typos before runtime ENOENT | pr-review-001 | P3 | 2026-03-21 |
 | 8 | JSDoc @param/@returns for all public functions in agents.js | pr-review-001 | P3 | 2026-03-21 |
 | 9 | `--force` mode switching cleanup — remove opposite mode's managed files (CODEX.md vs .claude/agents/judge.md) when re-scaffolding in a different mode | pr-review-002 | P2 | 2026-03-21 |
-| ~~10~~ | ~~Use task-scoped paths in loop.review.md and loop.build.md templates~~ — done in PR #1 | pr-review-002 | — | 2026-03-21 |
+| 10 | Error handling polish — use `{ cause: err }` in loadTemplate/scaffold error wrapping to preserve stack traces; hint DEBUG env var in entry point error output; add `@throws` JSDoc to agents.js public functions; clarify claude-judge.md write scope to mention judge-archive.md; add preflight template existence check before writing files | pr-review-toolkit | P3 | 2026-03-21 |
+| ~~11~~ | ~~Use task-scoped paths in loop.review.md and loop.build.md templates~~ — done in PR #1 | pr-review-002 | — | 2026-03-21 |
 
 ## Picked Up
 
