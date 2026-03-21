@@ -14,6 +14,7 @@ export async function scaffold(flags) {
   console.log('\n  create-dual-agent-loop\n');
 
   const config = await gatherConfig(flags);
+  if (!config) return;
   console.log('  Scaffolding the Builder/Judge protocol...\n');
   const files = getFilesToScaffold(config);
   const vars = getTemplateVars(config);
@@ -155,7 +156,7 @@ async function gatherConfig(flags) {
   } catch (err) {
     if (!err || err === '') {
       console.log('\n  Setup cancelled. Run again when ready.\n');
-      process.exit(0);
+      return null;
     }
     throw err;
   }
