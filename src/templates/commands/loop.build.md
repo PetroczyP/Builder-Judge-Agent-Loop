@@ -50,8 +50,8 @@ For auto-detect: find the most recently modified `status.json` under `agent-loop
 
 #### Mode: ADVANCE (`<task-id> <phase>`)
 
-1. Read `status.json` — verify current phase is `accepted` or that user is explicitly requesting phase change
-2. Update `status.json`: set `phase` to the new phase, reset `round` to 1, set state to `ready_for_builder`
+1. Read `TASK_DIR/status.json` — verify current phase is `accepted` or that user is explicitly requesting phase change
+2. Update `TASK_DIR/status.json`: set `phase` to the new phase, reset `round` to 1, set state to `ready_for_builder`
 3. Reset `verdict` to null
 4. **Then immediately proceed to the CONTINUE flow below**
 
@@ -65,11 +65,13 @@ This is the core builder loop. Read the task context and produce output appropri
 
 ### Step 3: Read task context
 
-1. Read `task.md` — goal, scope, constraints, acceptance criteria
-2. Read `status.json` — current phase, round, state
+All task files are in `TASK_DIR = agent-loop/<task-id>/` (resolved from Step 1).
+
+1. Read `TASK_DIR/task.md` — goal, scope, constraints, acceptance criteria
+2. Read `TASK_DIR/status.json` — current phase, round, state
 3. **State guard**: If state is NOT `ready_for_builder` and NOT `needs_revision`, STOP and tell the user: "Cannot proceed — current state is `<state>`. The judge needs to review first. {{JUDGE_INVOKE_INSTRUCTION}}"
-4. If `judge.md` exists, read the **latest round** — note every finding by ID (B-1, H-1, M-1, L-1)
-5. Read **Phase Summaries** from both `builder-archive.md` and `judge-archive.md` (if they exist)
+4. If `TASK_DIR/judge.md` exists, read the **latest round** — note every finding by ID (B-1, H-1, M-1, L-1)
+5. Read **Phase Summaries** from both `TASK_DIR/builder-archive.md` and `TASK_DIR/judge-archive.md` (if they exist)
 6. If the state is `accepted` and no phase override was given, tell the user the current phase is done and suggest the next phase
 
 ---
@@ -78,7 +80,7 @@ This is the core builder loop. Read the task context and produce output appropri
 
 #### Phase: `specify` — Feature Specification
 
-1. If a spec already exists (referenced in `task.md`), read it as the starting point
+1. If a spec already exists (referenced in `TASK_DIR/task.md`), read it as the starting point
 2. If no spec exists, draft one with:
    - User scenarios with priorities (P1, P2, P3) and acceptance scenarios
    - Functional requirements (testable, unambiguous)
@@ -133,7 +135,7 @@ This is the core builder loop. Read the task context and produce output appropri
 
 1. Summarize what was built vs. what was planned (tasks.md completion status)
 2. List all tests and their pass/fail status
-3. Check every acceptance criterion from `task.md` — mark pass/fail with evidence
+3. Check every acceptance criterion from `TASK_DIR/task.md` — mark pass/fail with evidence
 4. Note any deferred items, known limitations, or tech debt
 5. Identify any leftovers that should go to `specs/backlog.md`
 
@@ -144,7 +146,7 @@ This is the core builder loop. Read the task context and produce output appropri
 ### Step 5: Write builder.md
 
 Determine the round number:
-- If `builder.md` doesn't exist: Round 1
+- If `TASK_DIR/builder.md` doesn't exist: Round 1
 - Otherwise: increment from the last round in the file
 
 **Context management** (before writing):
