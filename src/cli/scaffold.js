@@ -183,7 +183,7 @@ function loadTemplate(name, vars) {
   }
 
   for (const [key, value] of Object.entries(vars)) {
-    content = content.replaceAll(key, value);
+    content = content.split(key).join(String(value));
   }
 
   return content;
