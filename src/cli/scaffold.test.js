@@ -202,7 +202,7 @@ describe('template rendering', () => {
     let content = readFileSync(join(TEMPLATES, templatePath), 'utf-8');
 
     for (const [key, value] of Object.entries(getTemplateVars(config))) {
-      content = content.replaceAll(key, value);
+      content = content.split(key).join(String(value));
     }
     return content;
   }
