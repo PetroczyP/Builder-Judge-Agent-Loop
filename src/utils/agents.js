@@ -32,6 +32,8 @@ export const AGENTS = Object.freeze({
 export function getTemplateVars(config) {
   const { agentMode, builderAgent, judgeAgent } = config;
 
+  if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
+
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
   if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
