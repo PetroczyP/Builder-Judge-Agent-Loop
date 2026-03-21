@@ -45,9 +45,9 @@ export function getTemplateVars(config) {
 
   return {
     // Core vars
-    '{{COORDINATOR_NAME}}': config.coordinator || '',
-    '{{RELEASE_MODE}}': config.releaseMode || '',
-    '{{MAX_ROUNDS}}': String(config.maxRounds || 5),
+    '{{COORDINATOR_NAME}}': config.coordinator ?? '',
+    '{{RELEASE_MODE}}': config.releaseMode ?? '',
+    '{{MAX_ROUNDS}}': String(config.maxRounds ?? 5),
     // Agent vars
     '{{BUILDER_AGENT_NAME}}': builder.displayName,
     '{{JUDGE_AGENT_NAME}}': judgeName,

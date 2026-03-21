@@ -27,6 +27,8 @@ Parse `$ARGUMENTS` to determine the mode:
 
 For auto-detect: find the most recently modified `status.json` under `agent-loop/*/`.
 
+Once the task is resolved, set `TASK_DIR = agent-loop/<task-id>/`. All task file references below use this convention.
+
 ---
 
 ### Step 2: Handle each mode
@@ -64,8 +66,6 @@ This is the core builder loop. Read the task context and produce output appropri
 ---
 
 ### Step 3: Read task context
-
-All task files are in `TASK_DIR = agent-loop/<task-id>/` (resolved from Step 1).
 
 1. Read `TASK_DIR/task.md` — goal, scope, constraints, acceptance criteria
 2. Read `TASK_DIR/status.json` — current phase, round, state

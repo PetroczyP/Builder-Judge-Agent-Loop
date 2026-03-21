@@ -1,4 +1,4 @@
-# Builder / Judge Protocol (Dual-Agent Collaboration Loop)
+# Builder / Judge Protocol
 
 **Version**: 1.2.0
 **Lineage**: Evolved from the Agent-in-a-Box protocol v1.1.0
