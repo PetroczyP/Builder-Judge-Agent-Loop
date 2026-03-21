@@ -22,6 +22,7 @@ try {
   config = JSON.parse(readFileSync(join(ROOT, '.dual-agent-loop.json'), 'utf-8'));
 } catch (err) {
   console.error(`  Error reading .dual-agent-loop.json: ${err.message}`);
+  if (process.env.DEBUG) console.error(err.stack);
   process.exit(1);
 }
 
@@ -60,6 +61,7 @@ function generate(templatePath, destPath) {
     console.log(`  generate  ${destPath}`);
   } catch (err) {
     console.error(`  Error generating ${destPath} from ${templatePath}: ${err.message}`);
+    if (process.env.DEBUG) console.error(err.stack);
     process.exit(1);
   }
 }

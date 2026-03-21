@@ -104,8 +104,7 @@ export function getNextSteps(config) {
   const { agentMode } = config;
   if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
 
-  const builderAgent = config.builderAgent || 'claude';
-  const judgeAgent = config.judgeAgent || (agentMode === 'single' ? 'claude' : 'codex');
+  const { builderAgent, judgeAgent } = config;
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
   if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);

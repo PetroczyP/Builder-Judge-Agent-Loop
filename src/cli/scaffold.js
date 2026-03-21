@@ -42,7 +42,7 @@ export async function scaffold(flags) {
       const content = loadTemplate(file.src, vars);
       writeFileSync(destPath, content);
     } catch (err) {
-      throw new Error(`Failed to create ${file.dest}: ${err.message}`);
+      throw new Error(`Failed to create ${file.dest}: ${err.message}`, { cause: err });
     }
     console.log(`  create   ${file.dest}`);
     created++;
@@ -67,7 +67,7 @@ export async function scaffold(flags) {
       created++;
     }
   } catch (err) {
-    throw new Error(`Failed to update CLAUDE.md: ${err.message}`);
+    throw new Error(`Failed to update CLAUDE.md: ${err.message}`, { cause: err });
   }
 
   // Config file
@@ -89,7 +89,7 @@ export async function scaffold(flags) {
         loop_dir: 'agent-loop',
       }, null, 2) + '\n');
     } catch (err) {
-      throw new Error(`Failed to create .dual-agent-loop.json: ${err.message}`);
+      throw new Error(`Failed to create .dual-agent-loop.json: ${err.message}`, { cause: err });
     }
     console.log('  create   .dual-agent-loop.json');
     created++;
@@ -162,11 +162,12 @@ async function gatherConfig(flags) {
       },
     ]);
   } catch (err) {
-    if (!err || err === '') {
+    // Enquirer throws an empty string or undefined when user presses Ctrl+C
+    if (err === '' || err === undefined) {
       console.log('\n  Setup cancelled. Run again when ready.\n');
       return null;
     }
-    throw err instanceof Error ? err : new Error(String(err));
+    throw err instanceof Error ? err : new Error(`Prompt failed: ${String(err)}`);
   }
 
   const builderAgent = 'claude';
@@ -204,7 +205,10 @@ function loadTemplate(name, vars) {
 function getGitUserName() {
   try {
     return execFileSync('git', ['config', 'user.name'], { encoding: 'utf-8' }).trim();
-  } catch {
+  } catch (err) {
+    // git not installed or user.name not set — expected, fall back silently
+    if (err.code === 'ENOENT' || err.status === 1) return null;
+    console.warn(`  Warning: could not read git user.name: ${err.message}`);
     return null;
   }
 }

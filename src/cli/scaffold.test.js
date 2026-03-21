@@ -181,17 +181,31 @@ describe('getNextSteps', () => {
   });
 
   it('single mode mentions loop.review', () => {
-    const lines = getNextSteps({ agentMode: 'single' });
+    const lines = getNextSteps({ agentMode: 'single', builderAgent: 'claude', judgeAgent: 'claude' });
     const text = lines.join('\n');
     assert.match(text, /loop\.review/);
     assert.match(text, /judge\.md/);
   });
 
   it('dual mode mentions Codex', () => {
-    const lines = getNextSteps({ agentMode: 'dual' });
+    const lines = getNextSteps({ agentMode: 'dual', builderAgent: 'claude', judgeAgent: 'codex' });
     const text = lines.join('\n');
     assert.match(text, /Codex/);
     assert.match(text, /CODEX\.md/);
+  });
+
+  it('throws on unknown builder agent', () => {
+    assert.throws(
+      () => getNextSteps({ agentMode: 'dual', builderAgent: 'unknown', judgeAgent: 'codex' }),
+      /Unknown builder agent/,
+    );
+  });
+
+  it('throws on unknown judge agent', () => {
+    assert.throws(
+      () => getNextSteps({ agentMode: 'dual', builderAgent: 'claude', judgeAgent: 'unknown' }),
+      /Unknown judge agent/,
+    );
   });
 });
 

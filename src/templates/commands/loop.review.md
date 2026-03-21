@@ -129,8 +129,8 @@ Rules:
 
 ### Soft round limit check
 
-If this is Round 5 or above, add a note:
-> **Note**: This is Round N (soft limit of 5 exceeded). Consider whether escalation to the coordinator would be more productive than continuing iteration.
+If this is Round {{MAX_ROUNDS}} or above, add a note:
+> **Note**: This is Round N (soft limit of {{MAX_ROUNDS}} exceeded). Consider whether escalation to the coordinator would be more productive than continuing iteration.
 
 ---
 
