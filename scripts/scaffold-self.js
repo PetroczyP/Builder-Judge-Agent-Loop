@@ -26,7 +26,7 @@ try {
 }
 
 // Validate required config keys before proceeding
-const REQUIRED_KEYS = ['coordinator', 'agent_mode', 'builder', 'judge', 'release_mode', 'max_rounds'];
+const REQUIRED_KEYS = ['coordinator', 'release_mode', 'max_rounds'];
 const missing = REQUIRED_KEYS.filter(k => !(k in config));
 if (missing.length > 0) {
   console.error(`  Error: .dual-agent-loop.json is missing keys: ${missing.join(', ')}`);

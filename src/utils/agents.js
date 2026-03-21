@@ -101,20 +101,27 @@ export function getFilesToScaffold(config) {
  * Return the "next steps" console output lines for the given configuration.
  */
 export function getNextSteps(config) {
-  if (!VALID_MODES.has(config.agentMode)) throw new Error(`Unsupported agent mode: "${config.agentMode}"`);
-  if (config.agentMode === 'single') {
+  const { agentMode } = config;
+  if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
+
+  const builderAgent = config.builderAgent || 'claude';
+  const judgeAgent = config.judgeAgent || (agentMode === 'single' ? 'claude' : 'codex');
+  const builder = AGENTS[builderAgent];
+  const judge = AGENTS[judgeAgent];
+
+  if (agentMode === 'single') {
     return [
       '  Next steps:',
-      '    1. Review CLAUDE.md and .claude/agents/judge.md',
-      '    2. /loop.build new <describe your first task>',
-      '    3. When ready for review: /loop.review <task-id>',
+      `    1. Review ${builder.id.toUpperCase()}.md and .${builder.id}/agents/judge.md`,
+      `    2. ${builder.builderCommandHint}`,
+      `    3. When ready for review: ${judge.judgeCommand}`,
     ];
   }
 
   return [
     '  Next steps:',
-    '    1. Review CLAUDE.md and CODEX.md',
-    '    2. In Claude Code: /loop.build new <describe your first task>',
-    '    3. In Codex: judge <task-id>',
+    `    1. Review ${builder.id.toUpperCase()}.md and ${judge.id.toUpperCase()}.md`,
+    `    2. In ${builder.displayName}: ${builder.builderCommandHint}`,
+    `    3. In ${judge.displayName}: ${judge.judgeCommand}`,
   ];
 }

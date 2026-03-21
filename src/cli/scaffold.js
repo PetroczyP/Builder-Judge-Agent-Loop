@@ -173,11 +173,11 @@ async function gatherConfig(flags) {
   const judgeAgent = agentMode === 'single' ? 'claude' : 'codex';
 
   return {
-    coordinator: answers.coordinator ?? defaults.coordinator,
+    coordinator: answers.coordinator || defaults.coordinator,
     agentMode,
     builderAgent,
     judgeAgent,
-    releaseMode: answers.releaseMode ?? defaults.releaseMode,
+    releaseMode: answers.releaseMode || defaults.releaseMode,
     maxRounds: answers.maxRounds ?? defaults.maxRounds,
   };
 }
