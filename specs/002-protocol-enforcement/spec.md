@@ -175,7 +175,7 @@ All new fields (`skipped_phases`, `preflight`, `review_context`) are optional fo
 | `src/templates/agents/claude-judge.md` | Add `model: inherit` to frontmatter |
 | `src/templates/protocol/PROTOCOL.md` | Phase-skip rules, extended status.json schema, updated CoVe section |
 
-No changes to JavaScript source code, utilities, or scaffold logic.
+JavaScript changes (e.g., in `src/cli/scaffold.js`, `src/utils/agents.js`, and related tests/tooling) are limited to supporting the updated templates and protocol metadata; no new runtime protocol-enforcement logic is added.
 
 ## Edge Cases
 

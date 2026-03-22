@@ -6,7 +6,7 @@ Tighten the command templates (`loop.build.md`, `loop.review.md`) and protocol d
 
 ## Scope
 
-- Template-only changes (no JavaScript code changes)
+- No runtime behavior changes; JS changes limited to scaffolding/tests/tooling
 - Files: `loop.build.md`, `loop.review.md`, `claude-judge.md`, `PROTOCOL.md` (all under `src/templates/`)
 - Extend `status.json` schema with optional fields: `skipped_phases`, `preflight`, `review_context`
 
