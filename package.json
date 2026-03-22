@@ -1,6 +1,6 @@
 {
   "name": "create-dual-agent-loop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scaffold the Builder/Judge dual-agent collaboration protocol into any project. Structured SDLC with quality gates for Claude Code and Codex.",
   "type": "module",
   "main": "src/index.js",
