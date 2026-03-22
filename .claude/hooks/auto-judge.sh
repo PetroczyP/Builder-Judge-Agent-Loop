@@ -117,7 +117,7 @@ echo "" >> "$LOG_FILE"
 
 "$CODEX_BIN" exec \\
   --full-auto \\
-  -m $CODEX_MODEL \\
+  -m "$CODEX_MODEL" \\
   -c 'model_reasoning_effort="xhigh"' \\
   -C "$REPO_ROOT" \\
   "judge $TASK_ID" \\
