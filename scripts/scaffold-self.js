@@ -28,7 +28,7 @@ try {
 
 // Validate required config keys before proceeding
 const REQUIRED_KEYS = ['coordinator', 'release_mode', 'max_rounds'];
-const missing = REQUIRED_KEYS.filter(k => !(k in config));
+const missing = REQUIRED_KEYS.filter((k) => !(k in config));
 if (missing.length > 0) {
   console.error(`  Error: .dual-agent-loop.json is missing keys: ${missing.join(', ')}`);
   process.exit(1);
@@ -73,7 +73,7 @@ console.log('\n  scaffold-self: generating project files from src/templates/\n')
 // CLAUDE.md.section is handled separately by scaffold.js (append-not-overwrite logic)
 // and is intentionally not regenerated here — it's project-specific once created.
 const SKIP_DESTS = new Set(['specs/backlog.md']);
-const files = getFilesToScaffold(fullConfig).filter(f => !SKIP_DESTS.has(f.dest));
+const files = getFilesToScaffold(fullConfig).filter((f) => !SKIP_DESTS.has(f.dest));
 for (const file of files) {
   generate(file.src, file.dest);
 }

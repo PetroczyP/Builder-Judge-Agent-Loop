@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+src/templates/
+agent-loop/
+specs/
+.claude/
+.vscode/
+*.md

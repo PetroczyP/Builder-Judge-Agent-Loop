@@ -11,7 +11,9 @@ let PKG;
 try {
   PKG = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
 } catch (err) {
-  throw new Error(`Failed to read package.json (installation may be corrupt): ${err.message}`);
+  throw new Error(`Failed to read package.json (installation may be corrupt): ${err.message}`, {
+    cause: err,
+  });
 }
 
 export async function scaffold(flags) {
@@ -77,17 +79,24 @@ export async function scaffold(flags) {
     skipped++;
   } else {
     try {
-      writeFileSync(configPath, JSON.stringify({
-        version: PKG.version,
-        coordinator: config.coordinator,
-        agent_mode: config.agentMode,
-        builder: config.builderAgent,
-        judge: config.judgeAgent,
-        release_mode: config.releaseMode,
-        max_rounds: config.maxRounds,
-        specs_dir: 'specs',
-        loop_dir: 'agent-loop',
-      }, null, 2) + '\n');
+      writeFileSync(
+        configPath,
+        JSON.stringify(
+          {
+            version: PKG.version,
+            coordinator: config.coordinator,
+            agent_mode: config.agentMode,
+            builder: config.builderAgent,
+            judge: config.judgeAgent,
+            release_mode: config.releaseMode,
+            max_rounds: config.maxRounds,
+            specs_dir: 'specs',
+            loop_dir: 'agent-loop',
+          },
+          null,
+          2,
+        ) + '\n',
+      );
     } catch (err) {
       throw new Error(`Failed to create .dual-agent-loop.json: ${err.message}`, { cause: err });
     }
@@ -189,7 +198,7 @@ function loadTemplate(name, vars) {
   try {
     content = readFileSync(filePath, 'utf-8');
   } catch (err) {
-    throw new Error(`Missing template "${name}": ${err.message}`);
+    throw new Error(`Missing template "${name}": ${err.message}`, { cause: err });
   }
 
   for (const [key, value] of Object.entries(vars)) {
