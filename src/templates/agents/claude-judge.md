@@ -1,5 +1,6 @@
 ---
 name: judge
+model: inherit
 description: "Judge subagent for the builder/judge protocol. Reviews builder output in an isolated session."
 tools:
   - Read

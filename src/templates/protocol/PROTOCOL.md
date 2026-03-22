@@ -219,6 +219,18 @@ Phase summaries MUST NOT include:
   "judge": "{{JUDGE_AGENT_ID}}",
   "verdict": null,
   "updated_at": "2026-03-20T10:00:00Z",
+
+  "skipped_phases": [
+    { "phase": "specify", "justification": "existing spec at specs/NNN/spec.md covers requirements" }
+  ],
+
+  "preflight": {
+    "cove_completed": true,
+    "antipatterns_checked": true
+  },
+
+  "review_context": "context_fork",
+
   "history": [
     { "round": 1, "phase": "specify", "actor": "builder", "verdict": null, "timestamp": "..." },
     { "round": 1, "phase": "specify", "actor": "judge", "verdict": "needs_revision", "timestamp": "..." }
@@ -244,6 +256,42 @@ Phase summaries MUST NOT include:
 - **Round >= {{MAX_ROUNDS}} soft flag**: Both agents note "Round N (exceeds soft limit of {{MAX_ROUNDS}}) — consider whether escalation is needed" but do NOT block.
 - **Round = max_rounds**: Auto-escalate to prevent infinite loops.
 
+### Phase Skipping
+
+Phases normally progress in order (`specify` → `design` → `plan` → `build` → `test` → `release`). A builder MAY skip phases when creating a task (CREATE mode only) if each skipped phase has a concrete justification.
+
+**Rules:**
+
+1. Each skipped phase MUST be recorded in `status.json.skipped_phases` as `{ "phase": "<name>", "justification": "<reason>" }`
+2. Justifications MUST reference a concrete artifact, constraint, or prior decision — not generic claims
+3. If `specify` is skipped, `task.md` MUST NOT reference a spec path unless a matching spec already exists in `specs/`
+4. The judge verifies each justification during preflight review
+
+**Valid justification examples:**
+- "Existing spec at `specs/003-auth/spec.md` covers all requirements"
+- "Bug fix with reproduction steps in issue #47 — no design decisions needed"
+- "Single-file config change — scope is self-evident from the diff"
+
+**Invalid justification examples (too generic):**
+- "Small change"
+- "Straightforward"
+- "Obvious"
+- "Not needed"
+
+**3+ phase skip threshold:** If 3 or more phases are skipped, the judge MUST flag as **H-severity** and require strong justification for each skipped phase. Skipping the majority of phases demands exceptional circumstances.
+
+**Backwards compatibility:** Tasks created before this rule will not have `skipped_phases` in `status.json`. Agents handle missing fields gracefully — absence means "task created before protocol enforcement," not "no phases were skipped."
+
+**New optional `status.json` fields:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `skipped_phases` | `array` (optional) | Records each skipped phase with justification |
+| `preflight` | `object` (optional) | Boolean flags: `cove_completed`, `antipatterns_checked` |
+| `review_context` | `string` (optional) | How the judge was invoked: `"context_fork"` or `"codex_agent"` |
+
+All three fields are optional. Absence means the task was created before protocol enforcement — agents evaluate on content merits, not metadata.
+
 ## Standard Loop
 
 1. Coordinator defines or approves `task.md`
@@ -262,7 +310,16 @@ When asked to judge a task (e.g., "judge 001-task-name"), follow these steps:
 
 Use the task ID to locate the folder at `agent-loop/<task-id>/`.
 
-### Step 2: Read context
+### Step 2: Isolation self-check
+
+Verify you are running in an isolated context. If invoked via `context: fork`, you start with a clean-slate context — no prior conversation history. If you observe prior conversation turns, tool calls, or builder work above your prompt, you were NOT invoked via the slash command. In that case:
+
+1. **STOP** — do not proceed with the review
+2. Tell the user: "This review session appears to share context with the builder. For an isolated review, invoke `/loop.review <task-id>` as a slash command."
+
+This is a best-effort safety net for the most common misuse case (pasting instructions into an active session).
+
+### Step 3: Read context
 
 1. Read `agent-loop/PROTOCOL.md` (this file) for the full rules
 2. Read `agent-loop/ANTIPATTERNS.md` — known anti-patterns to check for
@@ -273,7 +330,7 @@ Use the task ID to locate the folder at `agent-loop/<task-id>/`.
 7. Review any changed spec/code/test artifacts referenced by the builder
 8. Read the **Phase Summaries** section of `builder-archive.md` and `judge-archive.md` (if they exist) — this is required every round, not just on phase boundaries
 
-### Step 3: Context management
+### Step 4: Context management
 
 **Phase compaction check:** Read `judge.md` and find the first `## Round N — [phase]` header. Compare `[phase]` to the current phase in `status.json`. If they differ:
 1. Write a phase summary for the completed phase to `judge-archive.md` using the judge phase summary template (see Context Management section above)
@@ -286,7 +343,27 @@ If no round headers exist (empty or back-reference only), skip — compaction wa
 1. Move rounds 1 through N-2 from `judge.md` to `judge-archive.md` under an archived rounds section
 2. Keep the back-reference line and rounds N-1 onward
 
-### Step 4: Write judge.md
+### Step 5: Preflight verification
+
+Before evaluating the builder's content, verify the builder completed their preflight checklist. Check `builder.md` and `status.json` for evidence:
+
+1. **CoVe completion** — check for `### Verification` section in builder.md and `preflight.cove_completed` flag in status.json
+   - Missing on mandatory phases (`specify`, `design`, `build`): **H-severity**
+   - Missing on optional phases (`test`, `release`): **L-severity**
+2. **CoVe method correctness** — for each claim in the builder's `### Verification` section, verify the method matches the claim type:
+   - External claims (SDK, API, library, tool behavior) should use **web search**
+   - Internal claims (repo structure, code behavior, file contents) should use **repo search**
+   - Method mismatch: **L-severity** (wrong method is better than no verification, but the right method should be used)
+3. **Anti-pattern check** — check for `### Anti-Pattern Check` section in builder.md and `preflight.antipatterns_checked` flag in status.json
+   - Missing on any phase: **L-severity**
+4. **Phase-skip justifications** (if `skipped_phases` exists in status.json):
+   - Verify each justification is specific and references a concrete artifact or constraint
+   - Generic justifications ("small change", "straightforward", "obvious"): **H-severity**
+   - Referenced artifacts must actually exist — check with Glob/Read
+   - **If 3 or more phases are skipped**: **H-severity** requiring strong justification for each
+5. **Legacy tasks** — if `preflight` and `skipped_phases` fields are absent from status.json, note "Pre-enforcement task — evaluating on content merits" and proceed without blocking
+
+### Step 6: Write judge.md
 
 Determine the round number (match the builder's latest round).
 
@@ -297,13 +374,14 @@ Append a new section using the Judge Output Format (see below). Previous rounds 
 
 This is informational, not blocking.
 
-### Step 5: Update status.json
+### Step 7: Update status.json
 
 - Set `state` to the verdict value (`accepted`, `needs_revision`, or `escalated`)
 - Update `updated_at` to current ISO timestamp
+- Set `review_context` to `"context_fork"` (if invoked via `/loop.review`) or `"codex_agent"` (if invoked via Codex)
 - Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "..." }`
 
-### Step 6: Report
+### Step 8: Report
 
 State the verdict, number of findings by severity, and whether the task is ready for the next phase or needs builder revision.
 
@@ -367,6 +445,9 @@ For low-risk tasks (docs updates, isolated test additions, small bug fixes that 
 ### Verification
 - Checked: [what was web-searched or self-verified]
 - Corrections: [what changed as a result, or "None"]
+
+### Anti-Pattern Check
+- [List AP-IDs reviewed and any violations detected, or "None detected"]
 
 ### Remaining Risks
 - ...
@@ -443,7 +524,14 @@ After producing an artifact, each agent MUST self-verify before finalizing:
 
 1. **Generate**: Produce the artifact (spec, design, code, review)
 2. **Question**: Generate 3-5 verification questions about your own output — focus on factual claims, API usage, library behavior, and assumptions that could be wrong due to knowledge cutoff
-3. **Verify**: Answer each question independently. Use web search for any claim about external tools, SDKs, APIs, or libraries. Flag conflicts between your initial output and verification answers.
+3. **Categorize and verify**: For each question, determine the claim type and use the appropriate verification method:
+
+   | Claim type | Examples | Required method |
+   |------------|----------|----------------|
+   | **External** | SDK behavior, API signatures, library features, tool capabilities, compatibility claims | **Web search** — check current docs, not training data |
+   | **Internal** | Repo structure, existing code behavior, file contents, project conventions, architecture decisions | **Repo search** — use Grep, Read, Glob to verify against actual code |
+
+   Flag conflicts between your initial output and verification answers.
 4. **Revise**: Fix any inconsistencies found. Document what was corrected in the artifact.
 
 ### Web Research Cross-Check
