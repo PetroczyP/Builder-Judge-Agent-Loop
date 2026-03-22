@@ -1,0 +1,54 @@
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-pr-review.sh",
+            "timeout": 10000,
+            "statusMessage": "Checking if PR review is required..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-judge.sh",
+            "timeout": 15000
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-judge.sh",
+            "timeout": 15000
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-pr-review.sh",
+            "timeout": 5000,
+            "statusMessage": "Recording PR review completion..."
+          }
+        ]
+      }
+    ]
+  }
+}

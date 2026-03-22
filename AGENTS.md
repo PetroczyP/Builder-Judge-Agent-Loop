@@ -2,6 +2,66 @@
 
 Repository-wide instructions for all agents working in this repo.
 
+## Code Style
+
+- **JavaScript (ES Modules)** — `"type": "module"` in [package.json](package.json); use `import`/`export` everywhere
+- Derive `__dirname` via `fileURLToPath(import.meta.url)` — no CJS globals
+- Single quotes, 2-space indent, `const`/`let` only (never `var`), trailing commas in multi-line
+- Prettier defaults; ESLint flat config extends `@eslint/js` recommended + `eslint-config-prettier`
+- Named exports preferred (`export function …`); wrap errors with `new Error(msg, { cause: err })`
+- Freeze registries with `Object.freeze()` — see [src/utils/agents.js](src/utils/agents.js) for the pattern
+
+## Architecture
+
+```
+bin/create-dual-agent-loop.js   → thin entry, calls run() from src/index.js
+src/index.js                    → parses --force/--yes, delegates to scaffold()
+src/cli/scaffold.js             → core: prompts → config → template rendering → file writes
+src/utils/agents.js             → AGENTS registry, getTemplateVars(), getFilesToScaffold()
+src/templates/                  → Markdown/JSON with {{VAR}} placeholders (agents/, commands/, protocol/, task/)
+agent-loop/                     → dogfooding instance of the protocol for THIS project
+specs/                          → backlog and feature specs
+```
+
+**Template system**: Simple `split(key).join(value)` replacement — no template engine. Variables use `{{UPPER_SNAKE_CASE}}`. Null/undefined values throw immediately (fail-fast). See [scaffold.js loadTemplate()](src/cli/scaffold.js) for implementation.
+
+**Agent modes**: `dual` (Claude Code builds, Codex judges → scaffolds `CODEX.md`) or `single` (Claude Code plays both roles → scaffolds `.claude/agents/judge.md`).
+
+## Build and Test
+
+```sh
+npm install              # only runtime dep: enquirer
+npm test                 # Node.js built-in test runner (node --test src/**/*.test.js)
+npm run lint             # ESLint flat config
+npm run lint:fix         # auto-fix
+npm run format           # Prettier
+npm run format:check     # CI-friendly check
+npm run license:check    # allows MIT, ISC, BSD-2/3, Apache-2.0, 0BSD
+npm run scaffold-self    # dogfooding — runs scripts/scaffold-self.js
+```
+
+No build/transpile step — source JS is shipped directly. Tests are co-located (`*.test.js` next to source) using `node:test` + `node:assert/strict`.
+
+## Project Conventions
+
+- **Package**: `create-dual-agent-loop` — `create-*` convention for `npm init dual-agent-loop`
+- **Task folders**: `NNN-task-name/` (zero-padded 3-digit, kebab-case) under `agent-loop/`
+- **Template vars**: `{{UPPER_SNAKE_CASE}}` — 10 variables including `{{COORDINATOR_NAME}}`, `{{BUILDER_AGENT_NAME}}`, etc.
+- **Finding IDs**: `B-1` (blocker), `H-1` (high), `M-1` (medium), `L-1` (low)
+- **Slash commands**: `loop.<verb>.md` in `.claude/commands/`
+- **Protocol phases**: `specify → design → plan → build → test → release`
+- **State machine**: `ready_for_builder → ready_for_judge → needs_revision | accepted | escalated`
+- **CLAUDE.md** is append-only (never overwritten); all other files skip-if-exists unless `--force`
+- **`files` in package.json**: only `bin/`, `src/`, `LICENSE`, `README.md` are published
+
+## Security
+
+- `execFileSync` (not `exec`) for `git config user.name` — avoids shell injection
+- No credentials, API keys, or network calls — tool scaffolds only Markdown and JSON
+- `npm run license:check` enforces an allowlist of OSS licenses for production deps
+
+---
+
 ## Agent Loop
 
 The **canonical builder / judge workflow** is in:

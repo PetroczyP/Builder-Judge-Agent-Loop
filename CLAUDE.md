@@ -9,7 +9,7 @@ Workflow inspired by and compatible with [GitHub Spec-Kit](https://github.com/gi
 ## Tech Stack
 
 - Node.js (ES modules)
-- Dependencies: `commander` (CLI), `enquirer` (interactive prompts)
+- Dependencies: `enquirer` (interactive prompts)
 - No runtime dependencies beyond file I/O — the tool scaffolds markdown and JSON files
 
 ## Project Structure
