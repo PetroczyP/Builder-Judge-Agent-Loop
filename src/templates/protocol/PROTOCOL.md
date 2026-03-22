@@ -443,7 +443,7 @@ For low-risk tasks (docs updates, isolated test additions, small bug fixes that 
 (skip for round 1)
 
 ### Verification
-- Checked: [what was web-searched or self-verified]
+- Checked: [what was checked, method used (web search or repo search), and result]
 - Corrections: [what changed as a result, or "None"]
 
 ### Anti-Pattern Check
@@ -486,7 +486,7 @@ accepted | needs_revision | escalated
 - AC-2: pass | fail | untested
 
 ### Verification
-- Checked: [what was web-searched or self-verified]
+- Checked: [what was checked, method used (web search or repo search), and result]
 - Corrections: [what changed as a result, or "None"]
 
 ### Anti-Pattern Check
