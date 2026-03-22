@@ -232,8 +232,8 @@ Phase summaries MUST NOT include:
   "review_context": "context_fork",
 
   "history": [
-    { "round": 1, "phase": "specify", "actor": "builder", "verdict": null, "timestamp": "..." },
-    { "round": 1, "phase": "specify", "actor": "judge", "verdict": "needs_revision", "timestamp": "..." }
+    { "round": 1, "phase": "specify", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T10:00:00Z" },
+    { "round": 1, "phase": "specify", "actor": "judge", "verdict": "needs_revision", "timestamp": "2026-03-20T10:30:00Z" }
   ]
 }
 ```

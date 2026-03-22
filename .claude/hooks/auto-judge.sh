@@ -11,6 +11,11 @@
 
 set -euo pipefail
 
+# Ensure jq is available; degrade gracefully if missing
+if ! command -v jq >/dev/null 2>&1; then
+  exit 0
+fi
+
 CODEX_MODEL="${CODEX_MODEL:-gpt-5.4}"
 
 INPUT=$(cat)

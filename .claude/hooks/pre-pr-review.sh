@@ -15,6 +15,11 @@
 
 set -euo pipefail
 
+# Ensure jq is available; degrade gracefully if missing
+if ! command -v jq >/dev/null 2>&1; then
+  exit 0
+fi
+
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
