@@ -13,7 +13,6 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 INPUT=$(cat)
-TOOL_INPUT=$(echo "$INPUT" | jq -r '.tool_input // empty')
 
 # Check if this was a Skill tool call for pr-review-toolkit:review-pr
 SKILL_NAME=$(echo "$INPUT" | jq -r '.tool_input.skill // empty')

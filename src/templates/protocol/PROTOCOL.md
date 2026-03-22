@@ -229,7 +229,7 @@ Phase summaries MUST NOT include:
     "antipatterns_checked": true
   },
 
-  "review_context": "context_fork",
+  "review_context": "context_fork | codex_agent",
 
   "history": [
     { "round": 1, "phase": "specify", "actor": "builder", "verdict": null, "timestamp": "2026-03-20T10:00:00Z" },
