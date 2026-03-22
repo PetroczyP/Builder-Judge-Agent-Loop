@@ -50,7 +50,7 @@ jobs:
           done
 
           if [ $failed -eq 1 ]; then
-            echo "Smoke test failed: missing files"
+            echo "Smoke test failed: missing or empty files"
             exit 1
           fi
           echo "Smoke test passed: all expected files present"

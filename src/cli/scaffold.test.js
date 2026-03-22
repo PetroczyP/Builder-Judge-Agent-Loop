@@ -363,6 +363,9 @@ describe('protocol enforcement — loop.review.md', () => {
     const step1Idx = raw.indexOf('Step 1: Parse the command');
     const step2Idx = raw.indexOf('Step 2: Isolation self-check');
     const step3Idx = raw.indexOf('Step 3: Read context');
+    assert.ok(step1Idx >= 0, 'must contain Step 1: Parse the command');
+    assert.ok(step2Idx >= 0, 'must contain Step 2: Isolation self-check');
+    assert.ok(step3Idx >= 0, 'must contain Step 3: Read context');
     assert.ok(step2Idx > step1Idx, 'Isolation self-check must be Step 2');
     assert.ok(step3Idx > step2Idx, 'Read context must come after isolation self-check');
   });

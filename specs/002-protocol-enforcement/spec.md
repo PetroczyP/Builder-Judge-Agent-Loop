@@ -26,7 +26,7 @@ The protocol has good rules. The command templates do not enforce them strongly 
 
 ## Non-Goals
 
-- No changes to `scaffold.js` or any JavaScript code — this is template-only
+- No changes to core runtime behavior; functional changes are limited to command templates. JavaScript edits are restricted to supporting scaffolding (e.g., `scaffold.js` error wrapping), tests, scripts, and lint configuration.
 - No hookify rules or external enforcement mechanisms
 - No changes to the phase list itself (that is backlog item #2)
 - No changes to the judge's evaluation criteria or verdict rules

@@ -253,7 +253,7 @@ If this is Round 5 or above, add a note at the top of the round:
 - Update `round` to the current round number
 - Update `updated_at` to a **real** ISO 8601 timestamp. Generate it with: `date -u +"%Y-%m-%dT%H:%M:%SZ"`. **Never use placeholder values** like `00:00:00Z` or `2026-01-01T00:00:00Z`.
 - Set `preflight.cove_completed` and `preflight.antipatterns_checked` based on the pre-flight checklist results (Step 5)
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "builder", "verdict": null, "timestamp": "..." }` (use the same real timestamp)
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "builder", "verdict": null, "timestamp": "<ISO 8601 timestamp>" }` (use the same real timestamp as `updated_at`)
 
 ---
 
