@@ -54,7 +54,7 @@ Once the task is resolved, set `TASK_DIR = agent-loop/<task-id>/`. All task file
    - Acceptance criteria (from matching spec if found, otherwise draft from description)
    - Phase: the determined starting phase
    - Open decisions (flag anything ambiguous)
-   - Spec path: **only include if** a matching spec already exists in `specs/` OR the `specify` phase was not skipped. Do NOT reference a spec path that does not exist.
+   - Spec path: Include the path to `specs/NNN-feature-name/spec.md` if (a) a matching spec already exists there, OR (b) the `specify` phase was not skipped and will create it. When `specify` is skipped, only reference specs that already exist.
 7. Write `status.json` with state `ready_for_builder`, phase set to the starting phase, round 1. Include `skipped_phases` array if any phases were skipped.
 8. **Then immediately proceed to the CONTINUE flow below** for the starting phase
 

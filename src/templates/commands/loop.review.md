@@ -170,9 +170,9 @@ If this is Round {{MAX_ROUNDS}} or above, add a note:
 ### Step 8: Update status.json
 
 - Set `state` to the verdict value (`accepted`, `needs_revision`, or `escalated`)
-- Update `updated_at` to current ISO timestamp
+- Update `updated_at` to the real current ISO 8601 timestamp (e.g., UTC); never use placeholders such as `"..."` or `"1970-01-01T00:00:00Z"`
 - Set `review_context` to `"context_fork"` (if invoked via `/loop.review` with `context: fork`) or `"codex_agent"` (if invoked via Codex)
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "..." }`
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "<ISO 8601 timestamp>" }` using a real current ISO 8601 timestamp (no placeholders)
 
 ---
 

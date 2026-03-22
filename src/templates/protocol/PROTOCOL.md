@@ -218,7 +218,7 @@ Phase summaries MUST NOT include:
   "builder": "{{BUILDER_AGENT_ID}}",
   "judge": "{{JUDGE_AGENT_ID}}",
   "verdict": null,
-  "updated_at": "2026-03-20T10:00:00Z (use real timestamp — see timestamp rules below)",
+  "updated_at": "2026-03-20T10:00:00Z",
 
   "skipped_phases": [
     { "phase": "specify", "justification": "existing spec at specs/NNN/spec.md covers requirements" }
