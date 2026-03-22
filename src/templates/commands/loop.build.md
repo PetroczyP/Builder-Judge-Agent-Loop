@@ -182,9 +182,9 @@ Before writing builder.md, complete these checks.
 
 #### 5c. Update preflight flags
 
-After completing both checks, note that `status.json.preflight` will be set in the status.json update step:
-- `cove_completed`: `true`
-- `antipatterns_checked`: `true`
+After pre-flight, set `status.json.preflight` in the status update step based on what actually ran:
+- `cove_completed`: `true` if CoVe was executed for this round; `false` if skipped (allowed for optional `test`/`release` phases)
+- `antipatterns_checked`: `true` once the anti-pattern check is completed (mandatory on every phase)
 
 Only set these flags after actually completing the steps above. Setting flags without doing the work is itself an anti-pattern (AP-001).
 
