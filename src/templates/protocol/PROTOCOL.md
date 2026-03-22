@@ -379,7 +379,7 @@ This is informational, not blocking.
 - Set `state` to the verdict value (`accepted`, `needs_revision`, or `escalated`)
 - Update `updated_at` to current ISO timestamp
 - Set `review_context` to `"context_fork"` (if invoked via `/loop.review`) or `"codex_agent"` (if invoked via Codex)
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "..." }`
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "<current ISO 8601>" }`
 
 ### Step 8: Report
 
