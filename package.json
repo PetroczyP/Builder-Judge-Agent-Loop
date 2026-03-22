@@ -33,6 +33,9 @@
     "ai-coding",
     "create"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "author": "",
   "license": "MIT",
   "dependencies": {
