@@ -11,8 +11,9 @@
 
 set -euo pipefail
 
-# Ensure jq is available; degrade gracefully if missing
+# Ensure jq is available
 if ! command -v jq >/dev/null 2>&1; then
+  echo "WARNING: auto-judge hook skipped — jq is not installed. Install jq to enable automatic judging." >&2
   exit 0
 fi
 
@@ -42,6 +43,7 @@ fi
 
 # Read the actual file to check state
 if [ ! -f "$FILE_PATH" ]; then
+  echo "WARNING: auto-judge hook matched status.json path but file does not exist: $FILE_PATH" >&2
   exit 0
 fi
 
@@ -91,8 +93,11 @@ if [ -z "$CODEX_BIN" ] || [ ! -x "$CODEX_BIN" ]; then
   exit 0
 fi
 
-# Determine the repo root (parent of agent-loop/)
-REPO_ROOT=$(echo "$FILE_PATH" | sed 's|/agent-loop/.*||')
+# Determine the repo root — prefer CWD from hook input, fall back to path parsing
+REPO_ROOT=$(echo "$INPUT" | jq -r '.cwd // empty')
+if [ -z "$REPO_ROOT" ]; then
+  REPO_ROOT=$(echo "$FILE_PATH" | sed 's|/agent-loop/.*||')
+fi
 
 # Log file for this invocation
 LOG_FILE="/tmp/codex-judge-${TASK_ID}-${PHASE}-round-${ROUND}.log"

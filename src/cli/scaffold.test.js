@@ -244,6 +244,7 @@ describe('template rendering', () => {
     'agents/CHEATSHEET.md',
     'agents/CODEX.md',
     'commands/loop.build.md',
+    'commands/loop.review.md',
   ];
 
   for (const template of templatesToCheck) {
@@ -352,6 +353,29 @@ describe('protocol enforcement — loop.build.md', () => {
       raw,
       /### Anti-Pattern Check/,
       'builder.md template must include Anti-Pattern Check',
+    );
+  });
+
+  it('S9: spec path is conditional on specify phase', () => {
+    assert.match(
+      raw,
+      /specify.*phase was not skipped/s,
+      'must reference specify phase skip condition for spec path',
+    );
+    assert.match(
+      raw,
+      /only reference specs that already exist/,
+      'must instruct to only reference existing specs when specify is skipped',
+    );
+  });
+
+  it('preflight flags update instructions include cove_completed and antipatterns_checked', () => {
+    assert.match(raw, /cove_completed/, 'must reference cove_completed flag');
+    assert.match(raw, /antipatterns_checked/, 'must reference antipatterns_checked flag');
+    assert.match(
+      raw,
+      /Setting flags without doing the work/,
+      'must warn against setting flags without doing the work',
     );
   });
 });

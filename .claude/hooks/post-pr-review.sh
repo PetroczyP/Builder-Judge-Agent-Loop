@@ -7,8 +7,9 @@
 
 set -euo pipefail
 
-# Ensure jq is available; degrade gracefully if missing
+# Ensure jq is available
 if ! command -v jq >/dev/null 2>&1; then
+  echo "WARNING: post-pr-review hook skipped — jq is not installed." >&2
   exit 0
 fi
 
@@ -26,9 +27,14 @@ if [ "$SKILL_NAME" = "pr-review-toolkit:review-pr" ] || [ "$SKILL_NAME" = "pr-re
   # Get current branch to create the marker
   CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
   if [ -n "$CWD" ]; then
-    BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
   else
-    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  fi
+
+  if [ -z "$BRANCH" ]; then
+    echo "WARNING: post-pr-review hook could not determine current branch. Marker not created." >&2
+    exit 0
   fi
 
   SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '_')

@@ -15,9 +15,10 @@
 
 set -euo pipefail
 
-# Ensure jq is available; degrade gracefully if missing
+# Ensure jq is available — this is a security gate, so fail closed
 if ! command -v jq >/dev/null 2>&1; then
-  exit 0
+  echo "BLOCKED: jq is required for the PR review gate hook. Install jq and retry." >&2
+  exit 2
 fi
 
 INPUT=$(cat)
@@ -48,9 +49,14 @@ fi
 # Check for the current branch to build a marker file path
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 if [ -n "$CWD" ]; then
-  BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 else
-  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+fi
+
+if [ -z "$BRANCH" ]; then
+  echo "BLOCKED: Could not determine current branch. PR review gate cannot function." >&2
+  exit 2
 fi
 
 # For git push: skip if pushing to main/master (not a PR workflow)
@@ -68,7 +74,12 @@ if [ -f "$MARKER" ]; then
   # Review was completed — allow both push and PR create, then reset.
   # Decrement the use count; remove marker when exhausted.
   USES=$(cat "$MARKER")
-  if [ "$USES" -le 1 ] 2>/dev/null; then
+  # Guard against non-numeric marker content
+  if ! echo "$USES" | grep -qE '^[0-9]+$'; then
+    rm -f "$MARKER"
+    exit 0
+  fi
+  if [ "$USES" -le 1 ]; then
     rm -f "$MARKER"
   else
     echo $(( USES - 1 )) > "$MARKER"
