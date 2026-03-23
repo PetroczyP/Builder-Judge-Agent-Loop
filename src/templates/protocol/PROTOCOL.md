@@ -377,9 +377,9 @@ This is informational, not blocking.
 ### Step 7: Update status.json
 
 - Set `state` to the verdict value (`accepted`, `needs_revision`, or `escalated`)
-- Update `updated_at` to current ISO timestamp
+- Update `updated_at` to the real current ISO 8601 timestamp (no placeholders — run `date -u +"%Y-%m-%dT%H:%M:%SZ"` or equivalent)
 - Set `review_context` to `"context_fork"` (if invoked via `/loop.review`) or `"codex_agent"` (if invoked via Codex)
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "<current ISO 8601>" }`
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "<real ISO 8601 timestamp>" }`
 
 ### Step 8: Report
 
