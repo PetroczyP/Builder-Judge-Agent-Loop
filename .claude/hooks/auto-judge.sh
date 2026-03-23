@@ -60,6 +60,18 @@ if ! echo "$TASK_ID" | grep -qE '^[0-9]{3}-[a-z0-9-]+$'; then
   exit 0
 fi
 
+# Validate PHASE against known protocol phases
+if ! echo "$PHASE" | grep -qE '^(specify|design|plan|build|test|release)$'; then
+  echo "WARNING: PHASE '$PHASE' is not a recognized protocol phase" >&2
+  exit 0
+fi
+
+# Validate ROUND as a positive integer
+if ! echo "$ROUND" | grep -qE '^[1-9][0-9]*$'; then
+  echo "WARNING: ROUND '$ROUND' is not a valid positive integer" >&2
+  exit 0
+fi
+
 # Prevent double-invocation for the same task+phase+round
 MARKER="/tmp/.judge-invoked-${TASK_ID}-${PHASE}-round-${ROUND}"
 if [ -f "$MARKER" ]; then

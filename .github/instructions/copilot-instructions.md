@@ -14,7 +14,7 @@
 - Wrap errors with `new Error(msg, { cause: err })`
 - Freeze registries with `Object.freeze()` — see `src/utils/agents.js` for the pattern
 - No build/transpile step — source JS is shipped directly
-- Node.js ≥ 20 required
+- Node.js ≥ 20.19.0 required
 
 ## Project Structure
 
