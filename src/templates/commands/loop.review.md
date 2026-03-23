@@ -29,7 +29,18 @@ For auto-detect: find the most recently modified `status.json` under `agent-loop
 
 ---
 
-### Step 2: Read context
+### Step 2: Isolation self-check
+
+Verify you are running in an isolated context. If invoked via `context: fork`, you start with a clean-slate context — no prior conversation history. If you observe prior conversation turns, tool calls, or builder work above your prompt, you were NOT invoked via the slash command. In that case:
+
+1. **STOP** — do not proceed with the review
+2. Tell the user: "This review session appears to share context with the builder. For an isolated review, invoke `/loop.review <task-id>` as a slash command."
+
+This is a best-effort safety net for the most common misuse case (pasting instructions into an active session).
+
+---
+
+### Step 3: Read context
 
 Set `TASK_DIR = agent-loop/<task-id>/` (resolved from Step 1). All task files below are relative to `TASK_DIR`.
 
@@ -44,7 +55,7 @@ Set `TASK_DIR = agent-loop/<task-id>/` (resolved from Step 1). All task files be
 
 ---
 
-### Step 3: Context management
+### Step 4: Context management
 
 **Phase compaction check:** Read `TASK_DIR/judge.md` and find the first `## Round N — [phase]` header. Compare `[phase]` to the current phase in `TASK_DIR/status.json`. If they differ:
 1. Write a phase summary for the completed phase to `TASK_DIR/judge-archive.md` using the judge phase summary template (see PROTOCOL.md Context Management)
@@ -59,7 +70,29 @@ If no round headers exist (empty or back-reference only), skip.
 
 ---
 
-### Step 4: Review and evaluate
+### Step 5: Preflight verification
+
+Before evaluating the builder's content, verify the builder completed their preflight checklist. Check `builder.md` and `status.json` for evidence:
+
+1. **CoVe completion** — check for `### Verification` section in builder.md and `preflight.cove_completed` flag in status.json
+   - Missing on mandatory phases (`specify`, `design`, `build`): **H-severity**
+   - Missing on optional phases (`test`, `release`): **L-severity**
+2. **CoVe method correctness** — for each claim in the builder's `### Verification` section, verify the method matches the claim type:
+   - External claims (SDK, API, library, tool behavior) should use **web search**
+   - Internal claims (repo structure, code behavior, file contents) should use **repo search**
+   - Method mismatch: **L-severity** (wrong method is better than no verification, but the right method should be used)
+3. **Anti-pattern check** — check for `### Anti-Pattern Check` section in builder.md and `preflight.antipatterns_checked` flag in status.json
+   - Missing on any phase: **L-severity**
+4. **Phase-skip justifications** (if `skipped_phases` exists in status.json):
+   - Verify each justification is specific and references a concrete artifact or constraint
+   - Generic justifications ("small change", "straightforward", "obvious"): **H-severity**
+   - Referenced artifacts must actually exist — check with Glob/Read
+   - **If 3 or more phases are skipped**: **H-severity** requiring strong justification for each
+5. **Legacy tasks** — if `preflight` and `skipped_phases` fields are absent from status.json, note "Pre-enforcement task — evaluating on content merits" and proceed without blocking
+
+---
+
+### Step 6: Review and evaluate
 
 Follow the **Phase-Specific Review Focus** from PROTOCOL.md:
 
@@ -81,7 +114,7 @@ Check `agent-loop/ANTIPATTERNS.md` — flag any detected anti-patterns using AP-
 
 ---
 
-### Step 5: Write TASK_DIR/judge.md
+### Step 7: Write TASK_DIR/judge.md
 
 Determine the round number (match the builder's latest round).
 
@@ -110,7 +143,7 @@ accepted | needs_revision | escalated
 - AC-2: pass | fail | untested
 
 ### Verification
-- Checked: [what was web-searched or self-verified]
+- Checked: [what was checked, method used (web search or repo search), and result]
 - Corrections: [what changed as a result, or "None"]
 
 ### Anti-Pattern Check
@@ -134,15 +167,16 @@ If this is Round {{MAX_ROUNDS}} or above, add a note:
 
 ---
 
-### Step 6: Update status.json
+### Step 8: Update status.json
 
 - Set `state` to the verdict value (`accepted`, `needs_revision`, or `escalated`)
-- Update `updated_at` to current ISO timestamp
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "..." }`
+- Update `updated_at` to the real current ISO 8601 timestamp (e.g., UTC); never use placeholders such as `"..."` or `"1970-01-01T00:00:00Z"`
+- Set `review_context` to `"context_fork"` (if invoked via `/loop.review` with `context: fork`) or `"codex_agent"` (if invoked via Codex)
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "judge", "verdict": "<verdict>", "timestamp": "<ISO 8601 timestamp>" }` using a real current ISO 8601 timestamp (no placeholders)
 
 ---
 
-### Step 7: Report to the user
+### Step 9: Report to the user
 
 Tell the user concisely:
 - Task ID and phase

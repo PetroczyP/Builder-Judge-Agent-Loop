@@ -39,16 +39,24 @@ Once the task is resolved, set `TASK_DIR = agent-loop/<task-id>/`. All task file
 2. Generate a short kebab-case name from the description (e.g., "cli-init-command")
 3. Create the folder: `agent-loop/NNN-short-name/`
 4. Check if a matching spec already exists in `specs/` (by name similarity)
-5. Write `task.md` with:
+5. **Determine starting phase:** The default starting phase is `specify`. The builder MAY start at a later phase if each skipped phase has a concrete justification.
+   - For each skipped phase, record in `status.json.skipped_phases`: `{ "phase": "<name>", "justification": "<reason>" }`
+   - **Insufficient justifications** (these will be flagged by the judge): "small change", "straightforward", "obvious", "not needed", "simple task"
+   - **Valid justification examples**:
+     - "Existing spec at `specs/003-auth/spec.md` covers all requirements"
+     - "Bug fix with reproduction steps in issue #47 — no design decisions needed"
+     - "Single-file config change — scope is self-evident from the diff"
+   - If 3 or more phases are skipped, each justification must be especially strong — the judge will flag this as H-severity
+6. Write `task.md` with:
    - Goal (from the description)
    - Scope (from matching spec if found, otherwise infer from description)
    - Constraints (from constitution if it exists)
    - Acceptance criteria (from matching spec if found, otherwise draft from description)
-   - Phase: `specify`
+   - Phase: the determined starting phase
    - Open decisions (flag anything ambiguous)
-   - Spec path (if a matching spec exists, reference it)
-6. Write `status.json` with state `ready_for_builder`, phase `specify`, round 1
-7. **Then immediately proceed to the CONTINUE flow below** for the `specify` phase
+   - Spec path: Include the path to `specs/NNN-feature-name/spec.md` if (a) a matching spec already exists there, OR (b) the `specify` phase was not skipped and will create it. When `specify` is skipped, only reference specs that already exist.
+7. Write `status.json` with state `ready_for_builder`, phase set to the starting phase, round 1. Include `skipped_phases` array if any phases were skipped.
+8. **Then immediately proceed to the CONTINUE flow below** for the starting phase
 
 #### Mode: ADVANCE (`<task-id> <phase>`)
 
@@ -119,7 +127,11 @@ This is the core builder loop. Read the task context and produce output appropri
 3. Mark completed tasks as `[X]` in tasks.md
 4. Report progress after each completed task
 
-**Builder.md records**: tasks completed (with IDs), test commands run and results, files changed, any blockers
+**Test gate:** Each build round that introduces new behavior MUST include at least one new test covering that behavior. Running only pre-existing tests is insufficient when new behavior is introduced.
+
+**Escape hatch:** If the round does not introduce new behavior (refactoring, documentation, config-only changes, template-only changes), the builder MAY skip the test gate with a justification recorded in `### Test Evidence` explaining why no new test applies. Example: "Template-only markdown changes — no executable code to test."
+
+**Builder.md records**: tasks completed (with IDs), test commands run and results (including names of new tests), files changed, any blockers
 
 #### Phase: `test` — Verification & Hardening
 
@@ -143,7 +155,42 @@ This is the core builder loop. Read the task context and produce output appropri
 
 ---
 
-### Step 5: Write builder.md
+### Step 5: Pre-flight checklist
+
+Before writing builder.md, complete these checks.
+
+- **CoVe (5a)**: Mandatory for `specify`, `design`, and `build` phases. Optional for `test` and `release`.
+- **Anti-pattern check (5b)**: Mandatory on **every phase**.
+
+#### 5a. Chain of Verification (CoVe)
+
+1. **Question**: Generate 3-5 verification questions about your own output — targeting factual claims and assumptions
+2. **Categorize and verify**: For each question, determine the claim type and use the correct method:
+
+   | Claim type | Examples | Required method |
+   |------------|----------|----------------|
+   | **External** | SDK behavior, API signatures, library features, tool capabilities, compatibility | **Web search** — check current docs, not training data |
+   | **Internal** | Repo structure, existing code behavior, file contents, project conventions | **Repo search** — use Grep, Read, Glob to verify against actual code |
+
+3. **Revise**: Fix any inconsistencies found. Record what was checked, the method used, and any corrections in the `### Verification` section of builder.md.
+
+#### 5b. Anti-pattern check
+
+1. Read `agent-loop/ANTIPATTERNS.md`
+2. Scan your output for matches against cataloged anti-patterns
+3. Record findings in the `### Anti-Pattern Check` section of builder.md, listing AP-IDs reviewed and any violations detected
+
+#### 5c. Update preflight flags
+
+After pre-flight, set `status.json.preflight` in the status update step based on what actually ran:
+- `cove_completed`: `true` if CoVe was executed for this round; `false` if skipped (allowed for optional `test`/`release` phases)
+- `antipatterns_checked`: `true` once the anti-pattern check is completed (mandatory on every phase)
+
+Only set these flags after actually completing the steps above. Setting flags without doing the work is itself an anti-pattern (AP-001).
+
+---
+
+### Step 6: Write builder.md
 
 Determine the round number:
 - If `TASK_DIR/builder.md` doesn't exist: Round 1
@@ -176,8 +223,11 @@ Append (never overwrite) a new section:
 (omit for Round 1 or if no TASK_DIR/judge.md exists)
 
 ### Verification
-- Checked: [what was web-searched or CoVe self-verified]
+- Checked: [what was checked, method used (web search or repo search), and result]
 - Corrections: [what changed as a result, or "None"]
+
+### Anti-Pattern Check
+- [List AP-IDs reviewed and any violations detected, or "None detected"]
 
 ### Remaining Risks
 - ...
@@ -195,28 +245,19 @@ Rules:
 If this is Round 5 or above, add a note at the top of the round:
 > **Note**: This is Round N (soft limit of 5 exceeded). Consider whether escalation would be more productive than continuing iteration.
 
-### Verification step (between Step 4 and Step 5)
-
-Before writing builder.md, run Chain of Verification:
-
-1. **Question**: Generate 3-5 verification questions about your own output — targeting factual claims about external tools, SDKs, APIs, library behavior, or compatibility
-2. **Web search**: For each question involving an external tool or API, search current documentation. Do not rely solely on training data.
-3. **Revise**: Fix any inconsistencies. Record what was checked and corrected in the `### Verification` section of builder.md.
-
-This is mandatory for `specify`, `design`, and `build` phases. Optional for `test` and `release`.
-
 ---
 
-### Step 6: Update TASK_DIR/status.json
+### Step 7: Update TASK_DIR/status.json
 
 - Set `state` to `"ready_for_judge"`
 - Update `round` to the current round number
-- Update `updated_at` to current ISO timestamp
-- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "builder", "verdict": null, "timestamp": "..." }`
+- Update `updated_at` to a **real** ISO 8601 timestamp. Generate it with: `date -u +"%Y-%m-%dT%H:%M:%SZ"`. **Never use placeholder values** like `00:00:00Z` or `2026-01-01T00:00:00Z`.
+- Set `preflight.cove_completed` and `preflight.antipatterns_checked` based on the pre-flight checklist results (Step 5)
+- Append to `history`: `{ "round": N, "phase": "<phase>", "actor": "builder", "verdict": null, "timestamp": "<ISO 8601 timestamp>" }` (use the same real timestamp as `updated_at`)
 
 ---
 
-### Step 7: Report to the user
+### Step 8: Report to the user
 
 Tell the user concisely:
 - Task ID and phase

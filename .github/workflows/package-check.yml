@@ -1,0 +1,28 @@
+name: Package Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  package-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - run: npm ci
+      - name: Verify package contents
+        run: |
+          set -o pipefail
+          npm pack --dry-run 2>&1 | tee pack-output.txt
+      - name: Check essential files are included
+        run: |
+          for file in bin/create-dual-agent-loop.js src/index.js src/templates/protocol/PROTOCOL.md src/utils/agents.js LICENSE README.md; do
+            if ! grep -qF "$file" pack-output.txt; then
+              echo "ERROR: $file missing from package"
+              exit 1
+            fi
+          done
+          echo "All essential files present in package"

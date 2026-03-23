@@ -1,6 +1,6 @@
 {
   "name": "create-dual-agent-loop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scaffold the Builder/Judge dual-agent collaboration protocol into any project. Structured SDLC with quality gates for Claude Code and Codex.",
   "type": "module",
   "main": "src/index.js",
@@ -15,7 +15,12 @@
   ],
   "scripts": {
     "scaffold-self": "node scripts/scaffold-self.js",
-    "test": "node --test src/**/*.test.js"
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "license:check": "license-checker --production --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD\""
   },
   "keywords": [
     "claude-code",
@@ -28,9 +33,20 @@
     "ai-coding",
     "create"
   ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "enquirer": "^2.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.4.0",
+    "license-checker": "^25.0.1",
+    "prettier": "^3.8.1"
   }
 }

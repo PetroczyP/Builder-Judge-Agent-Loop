@@ -1,0 +1,56 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - run: npm ci
+      - name: Run CLI in temp directory and verify output
+        run: |
+          WORK_DIR=$(mktemp -d)
+          cd "$WORK_DIR"
+          node "$GITHUB_WORKSPACE/bin/create-dual-agent-loop.js" --yes
+
+          expected_files=(
+            "agent-loop/PROTOCOL.md"
+            "agent-loop/ANTIPATTERNS.md"
+            ".claude/commands/loop.build.md"
+            ".claude/commands/loop.status.md"
+            ".claude/commands/loop.backlog.md"
+            ".claude/commands/loop.close.md"
+            "AGENTS.md"
+            "CHEATSHEET.md"
+            "CLAUDE.md"
+            "CODEX.md"
+            "specs/backlog.md"
+            ".dual-agent-loop.json"
+          )
+
+          failed=0
+          for f in "${expected_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              failed=1
+            elif [ ! -s "$f" ]; then
+              echo "EMPTY: $f"
+              failed=1
+            else
+              echo "OK: $f"
+            fi
+          done
+
+          if [ $failed -eq 1 ]; then
+            echo "Smoke test failed: missing or empty files"
+            exit 1
+          fi
+          echo "Smoke test passed: all expected files present"

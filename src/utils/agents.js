@@ -41,9 +41,8 @@ export function getTemplateVars(config) {
   if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
   if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
 
-  const judgeName = agentMode === 'single'
-    ? `${judge.displayName} (judge mode)`
-    : judge.displayName;
+  const judgeName =
+    agentMode === 'single' ? `${judge.displayName} (judge mode)` : judge.displayName;
 
   return {
     // Core vars
@@ -91,10 +90,7 @@ export function getFilesToScaffold(config) {
   }
 
   // dual mode (default)
-  return [
-    ...common,
-    { src: 'agents/CODEX.md', dest: 'CODEX.md' },
-  ];
+  return [...common, { src: 'agents/CODEX.md', dest: 'CODEX.md' }];
 }
 
 /**

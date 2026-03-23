@@ -117,15 +117,12 @@ describe('getTemplateVars', () => {
 
 describe('getFilesToScaffold', () => {
   it('throws on unsupported agent mode', () => {
-    assert.throws(
-      () => getFilesToScaffold({ agentMode: 'invalid' }),
-      /Unsupported agent mode/,
-    );
+    assert.throws(() => getFilesToScaffold({ agentMode: 'invalid' }), /Unsupported agent mode/);
   });
 
   it('dual mode includes CODEX.md but not judge subagent', () => {
     const files = getFilesToScaffold({ agentMode: 'dual' });
-    const dests = files.map(f => f.dest);
+    const dests = files.map((f) => f.dest);
 
     assert.ok(dests.includes('CODEX.md'));
     assert.ok(!dests.includes('.claude/agents/judge.md'));
@@ -134,7 +131,7 @@ describe('getFilesToScaffold', () => {
 
   it('single mode includes judge subagent but not CODEX.md', () => {
     const files = getFilesToScaffold({ agentMode: 'single' });
-    const dests = files.map(f => f.dest);
+    const dests = files.map((f) => f.dest);
 
     assert.ok(!dests.includes('CODEX.md'));
     assert.ok(dests.includes('.claude/agents/judge.md'));
@@ -162,7 +159,7 @@ describe('getFilesToScaffold', () => {
     ];
 
     for (const mode of ['single', 'dual']) {
-      const dests = getFilesToScaffold({ agentMode: mode }).map(f => f.dest);
+      const dests = getFilesToScaffold({ agentMode: mode }).map((f) => f.dest);
       for (const expected of commonDests) {
         assert.ok(dests.includes(expected), `${mode} mode missing ${expected}`);
       }
@@ -174,14 +171,15 @@ describe('getFilesToScaffold', () => {
 
 describe('getNextSteps', () => {
   it('throws on unsupported agent mode', () => {
-    assert.throws(
-      () => getNextSteps({ agentMode: 'invalid' }),
-      /Unsupported agent mode/,
-    );
+    assert.throws(() => getNextSteps({ agentMode: 'invalid' }), /Unsupported agent mode/);
   });
 
   it('single mode mentions loop.review', () => {
-    const lines = getNextSteps({ agentMode: 'single', builderAgent: 'claude', judgeAgent: 'claude' });
+    const lines = getNextSteps({
+      agentMode: 'single',
+      builderAgent: 'claude',
+      judgeAgent: 'claude',
+    });
     const text = lines.join('\n');
     assert.match(text, /loop\.review/);
     assert.match(text, /judge\.md/);
@@ -246,6 +244,7 @@ describe('template rendering', () => {
     'agents/CHEATSHEET.md',
     'agents/CODEX.md',
     'commands/loop.build.md',
+    'commands/loop.review.md',
   ];
 
   for (const template of templatesToCheck) {
@@ -308,13 +307,270 @@ describe('template rendering', () => {
   });
 });
 
+// ── Protocol Enforcement Tests (002-protocol-enforcement) ────────
+
+describe('protocol enforcement — loop.build.md', () => {
+  const raw = readFileSync(join(TEMPLATES, 'commands/loop.build.md'), 'utf-8');
+
+  it('AC-1: CREATE mode includes phase-skip guardrails with justification requirements', () => {
+    assert.match(raw, /skipped_phases/, 'must reference skipped_phases in status.json');
+    assert.match(raw, /Insufficient justifications/, 'must list insufficient justifications');
+    assert.match(raw, /"small change"/, 'must call out "small change" as insufficient');
+    assert.match(raw, /3 or more phases are skipped/, 'must mention 3+ phase-skip threshold');
+  });
+
+  it('AC-2: includes a pre-flight checklist step before builder.md writing', () => {
+    const preflightIdx = raw.indexOf('Pre-flight checklist');
+    const writeIdx = raw.indexOf('Write builder.md');
+    assert.ok(preflightIdx > 0, 'must contain Pre-flight checklist step');
+    assert.ok(writeIdx > preflightIdx, 'Pre-flight must come before Write builder.md');
+  });
+
+  it('AC-3: CoVe distinguishes external (web search) from internal (repo search)', () => {
+    assert.match(raw, /\*\*External\*\*/, 'must label External claim type');
+    assert.match(raw, /\*\*Internal\*\*/, 'must label Internal claim type');
+    assert.match(raw, /\*\*Web search\*\*/, 'External claims require web search');
+    assert.match(raw, /\*\*Repo search\*\*/, 'Internal claims require repo search');
+  });
+
+  it('AC-4: build phase includes test gate with escape hatch', () => {
+    assert.match(raw, /\*\*Test gate:\*\*/, 'must include Test gate');
+    assert.match(raw, /\*\*Escape hatch:\*\*/, 'must include Escape hatch');
+    assert.match(
+      raw,
+      /pre-existing tests is insufficient/,
+      'must call out pre-existing tests as insufficient',
+    );
+  });
+
+  it('AC-5: includes timestamp enforcement with example command', () => {
+    assert.match(raw, /date -u \+"%Y-%m-%dT%H:%M:%SZ"/, 'must include date -u example');
+    assert.match(raw, /Never use placeholder values/, 'must prohibit placeholder values');
+  });
+
+  it('AC-6: builder.md template includes Anti-Pattern Check section', () => {
+    assert.match(
+      raw,
+      /### Anti-Pattern Check/,
+      'builder.md template must include Anti-Pattern Check',
+    );
+  });
+
+  it('S9: spec path is conditional on specify phase', () => {
+    assert.match(
+      raw,
+      /specify.*phase was not skipped/s,
+      'must reference specify phase skip condition for spec path',
+    );
+    assert.match(
+      raw,
+      /only reference specs that already exist/,
+      'must instruct to only reference existing specs when specify is skipped',
+    );
+  });
+
+  it('preflight flags update instructions include cove_completed and antipatterns_checked', () => {
+    assert.match(raw, /cove_completed/, 'must reference cove_completed flag');
+    assert.match(raw, /antipatterns_checked/, 'must reference antipatterns_checked flag');
+    assert.match(
+      raw,
+      /Setting flags without doing the work/,
+      'must warn against setting flags without doing the work',
+    );
+  });
+});
+
+describe('protocol enforcement — loop.review.md', () => {
+  const raw = readFileSync(join(TEMPLATES, 'commands/loop.review.md'), 'utf-8');
+
+  it('AC-7: includes isolation self-check as first step after command parsing', () => {
+    const step1Idx = raw.indexOf('Step 1: Parse the command');
+    const step2Idx = raw.indexOf('Step 2: Isolation self-check');
+    const step3Idx = raw.indexOf('Step 3: Read context');
+    assert.ok(step1Idx >= 0, 'must contain Step 1: Parse the command');
+    assert.ok(step2Idx >= 0, 'must contain Step 2: Isolation self-check');
+    assert.ok(step3Idx >= 0, 'must contain Step 3: Read context');
+    assert.ok(step2Idx > step1Idx, 'Isolation self-check must be Step 2');
+    assert.ok(step3Idx > step2Idx, 'Read context must come after isolation self-check');
+  });
+
+  it('AC-8: includes preflight verification with tiered severity', () => {
+    assert.match(raw, /Step 5: Preflight verification/, 'must have Preflight verification step');
+    assert.match(raw, /\*\*H-severity\*\*/, 'must include H-severity');
+    assert.match(raw, /\*\*L-severity\*\*/, 'must include L-severity');
+    assert.match(
+      raw,
+      /Missing on mandatory phases.*H-severity/s,
+      'missing CoVe on mandatory = H-severity',
+    );
+    assert.match(
+      raw,
+      /Missing on any phase.*L-severity/s,
+      'missing anti-pattern check = L-severity',
+    );
+  });
+
+  it('AC-8: preflight includes CoVe method correctness check', () => {
+    assert.match(raw, /CoVe method correctness/, 'must check CoVe method correctness');
+    assert.match(raw, /Method mismatch.*L-severity/s, 'method mismatch = L-severity');
+  });
+
+  it('AC-8: preflight includes phase-skip justification checks', () => {
+    assert.match(
+      raw,
+      /3 or more phases are skipped.*H-severity/s,
+      'must flag 3+ phase skips as H-severity',
+    );
+    assert.match(raw, /Generic justifications.*H-severity/s, 'generic justifications = H-severity');
+  });
+
+  it('includes legacy task handling in preflight', () => {
+    assert.match(raw, /Legacy tasks/, 'must handle legacy tasks');
+    assert.match(raw, /evaluating on content merits/, 'legacy tasks evaluated on content merits');
+  });
+
+  it('records review_context in status.json update', () => {
+    assert.match(raw, /review_context/, 'must record review_context');
+    assert.match(
+      raw,
+      /context_fork.*codex_agent/s,
+      'must support both context_fork and codex_agent',
+    );
+  });
+});
+
+describe('protocol enforcement — claude-judge.md', () => {
+  it('AC-9: includes model: inherit in frontmatter', () => {
+    const raw = readFileSync(join(TEMPLATES, 'agents/claude-judge.md'), 'utf-8');
+    const frontmatter = raw.split('---')[1];
+    assert.match(frontmatter, /model:\s*inherit/, 'must have model: inherit in frontmatter');
+  });
+});
+
+describe('protocol enforcement — PROTOCOL.md', () => {
+  const raw = readFileSync(join(TEMPLATES, 'protocol/PROTOCOL.md'), 'utf-8');
+
+  it('AC-10: documents Phase Skipping rules', () => {
+    assert.match(raw, /### Phase Skipping/, 'must have Phase Skipping section');
+    assert.match(raw, /skipped_phases/, 'must reference skipped_phases');
+    assert.match(raw, /3\+ phase skip threshold/i, 'must document 3+ threshold');
+  });
+
+  it('AC-10: documents extended status.json schema with optional fields', () => {
+    assert.match(raw, /skipped_phases.*optional/is, 'skipped_phases must be optional');
+    assert.match(raw, /preflight.*optional/is, 'preflight must be optional');
+    assert.match(raw, /review_context.*optional/is, 'review_context must be optional');
+  });
+
+  it('AC-10: CoVe section includes method categorization', () => {
+    assert.match(raw, /\*\*External\*\*/, 'must label External claim type');
+    assert.match(raw, /\*\*Internal\*\*/, 'must label Internal claim type');
+    assert.match(raw, /\*\*Web search\*\*/, 'External → web search');
+    assert.match(raw, /\*\*Repo search\*\*/, 'Internal → repo search');
+  });
+
+  it('AC-10: Builder Output Format includes Anti-Pattern Check', () => {
+    // Verify Anti-Pattern Check appears in the Builder Output Format section
+    const builderFmtIdx = raw.indexOf('## Builder Output Format');
+    const judgeFmtIdx = raw.indexOf('## Judge Output Format');
+    const section = raw.slice(builderFmtIdx, judgeFmtIdx);
+    assert.match(
+      section,
+      /### Anti-Pattern Check/,
+      'Builder Output Format must include Anti-Pattern Check',
+    );
+  });
+
+  it('AC-10: Judge Workflow includes isolation self-check and preflight verification', () => {
+    const judgeWorkflowIdx = raw.indexOf('## Judge Workflow');
+    const phasesIdx = raw.indexOf('## Phases');
+    const section = raw.slice(judgeWorkflowIdx, phasesIdx);
+    assert.match(
+      section,
+      /Isolation self-check/,
+      'Judge Workflow must include isolation self-check',
+    );
+    assert.match(
+      section,
+      /Preflight verification/,
+      'Judge Workflow must include preflight verification',
+    );
+  });
+
+  it('AC-11: all new fields are documented as optional', () => {
+    assert.match(raw, /All three fields are optional/, 'must state all three fields are optional');
+    assert.match(raw, /Backwards compatibility/, 'must document backwards compatibility');
+  });
+});
+
+describe('protocol enforcement — cross-document consistency', () => {
+  const buildRaw = readFileSync(join(TEMPLATES, 'commands/loop.build.md'), 'utf-8');
+  const reviewRaw = readFileSync(join(TEMPLATES, 'commands/loop.review.md'), 'utf-8');
+  const protocolRaw = readFileSync(join(TEMPLATES, 'protocol/PROTOCOL.md'), 'utf-8');
+
+  it('Anti-Pattern Check appears in all three documents', () => {
+    assert.match(buildRaw, /### Anti-Pattern Check/, 'loop.build.md must have Anti-Pattern Check');
+    assert.match(
+      reviewRaw,
+      /### Anti-Pattern Check/,
+      'loop.review.md must have Anti-Pattern Check',
+    );
+    assert.match(protocolRaw, /### Anti-Pattern Check/, 'PROTOCOL.md must have Anti-Pattern Check');
+  });
+
+  it('isolation self-check in loop.review.md and PROTOCOL.md', () => {
+    assert.match(
+      reviewRaw,
+      /Isolation self-check/,
+      'loop.review.md must have isolation self-check',
+    );
+    assert.match(protocolRaw, /Isolation self-check/, 'PROTOCOL.md must have isolation self-check');
+  });
+
+  it('preflight verification in loop.review.md and PROTOCOL.md', () => {
+    assert.match(
+      reviewRaw,
+      /Preflight verification/,
+      'loop.review.md must have preflight verification',
+    );
+    assert.match(
+      protocolRaw,
+      /Preflight verification/,
+      'PROTOCOL.md must have preflight verification',
+    );
+  });
+
+  it('CoVe phase applicability is consistent between builder and judge sides', () => {
+    // Builder side: CoVe mandatory for specify, design, build; optional for test, release
+    assert.match(buildRaw, /Mandatory for `specify`, `design`, and `build`/, 'builder CoVe phases');
+    // Judge side: same rule, expressed as severity
+    assert.match(
+      reviewRaw,
+      /Missing on mandatory phases.*specify.*design.*build/s,
+      'judge CoVe mandatory phases',
+    );
+  });
+
+  it('anti-pattern check is mandatory on every phase in both builder and judge', () => {
+    assert.match(
+      buildRaw,
+      /Mandatory on \*\*every phase\*\*/,
+      'builder: anti-pattern on every phase',
+    );
+    assert.match(reviewRaw, /Missing on any phase/, 'judge: anti-pattern check on any phase');
+  });
+});
+
 // ── Config Version Tests ─────────────────────────────────────────
 
 describe('config version', () => {
   it('scaffold uses the version from package.json', () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
     const scaffoldSrc = readFileSync(join(ROOT, 'src', 'cli', 'scaffold.js'), 'utf-8');
-    assert.ok(scaffoldSrc.includes('PKG.version'), 'scaffold.js must read version from package.json, not hardcode it');
+    assert.ok(
+      scaffoldSrc.includes('PKG.version'),
+      'scaffold.js must read version from package.json, not hardcode it',
+    );
     assert.ok(pkg.version, 'package.json must have a version field');
   });
 });
