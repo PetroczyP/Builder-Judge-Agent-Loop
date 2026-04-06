@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  appendFileSync,
+  unlinkSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { computeHash, compareFile, convergencePass } from '../utils/hashing.js';
 import { normalizeConfig, writeConfig } from '../utils/config.js';
@@ -229,14 +236,19 @@ function detectRemovedFiles(config, currentManagedSet, cwd, agentMode) {
   if (Array.isArray(config.managed_files) && config.managed_files.length > 0) {
     return filter(config.managed_files);
   }
-  if (config.file_hashes && typeof config.file_hashes === 'object' && !Array.isArray(config.file_hashes) && Object.keys(config.file_hashes).length > 0) {
+  if (
+    config.file_hashes &&
+    typeof config.file_hashes === 'object' &&
+    !Array.isArray(config.file_hashes) &&
+    Object.keys(config.file_hashes).length > 0
+  ) {
     return filter(Object.keys(config.file_hashes));
   }
   // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by mode
   return filter(
-    REMOVED_TEMPLATES
-      .filter((r) => r.modes.includes(agentMode) && existsSync(join(cwd, r.dest)))
-      .map((r) => r.dest),
+    REMOVED_TEMPLATES.filter(
+      (r) => r.modes.includes(agentMode) && existsSync(join(cwd, r.dest)),
+    ).map((r) => r.dest),
   );
 }
 

@@ -159,7 +159,10 @@ describe('convergencePass', () => {
       pendingHashes: { [dest]: 'abc123' },
       currentManaged: new Set([dest]),
       cwd,
-      promptFn: async (d) => { promptCalls.push(d); return true; },
+      promptFn: async (d) => {
+        promptCalls.push(d);
+        return true;
+      },
     });
 
     assert.equal(result.promoted.size, 0);
@@ -208,7 +211,10 @@ describe('convergencePass', () => {
       pendingHashes: { [dest]: 'jkl012' },
       currentManaged: new Set(['agent-loop/OTHER.md']),
       cwd,
-      promptFn: async (d) => { promptCalls.push(d); return true; },
+      promptFn: async (d) => {
+        promptCalls.push(d);
+        return true;
+      },
     });
 
     assert.equal(result.promoted.size, 0);
@@ -225,22 +231,19 @@ describe('convergencePass', () => {
       pendingHashes: { [dest]: 'abc123' },
       currentManaged: new Set([dest]),
       cwd,
-      promptFn: async (msg) => { promptMessages.push(msg); return true; },
+      promptFn: async (msg) => {
+        promptMessages.push(msg);
+        return true;
+      },
     });
 
     assert.equal(promptMessages.length, 1);
-    assert.ok(
-      promptMessages[0].includes(dest),
-      'prompt should include the file path',
-    );
+    assert.ok(promptMessages[0].includes(dest), 'prompt should include the file path');
     assert.ok(
       promptMessages[0].includes('pending conflict'),
       'prompt should mention pending conflict',
     );
-    assert.ok(
-      promptMessages[0].includes('merge'),
-      'prompt should ask about merge',
-    );
+    assert.ok(promptMessages[0].includes('merge'), 'prompt should ask about merge');
   });
 
   it('multiple entries: partial promotion (one yes, one no)', async () => {
@@ -299,4 +302,3 @@ describe('compareFile with empty-string storedHash', () => {
     assert.equal(result.action, 'conflict_prehash');
   });
 });
-

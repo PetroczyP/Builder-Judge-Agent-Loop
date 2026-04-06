@@ -1,11 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  mkdtempSync,
-  writeFileSync,
-  readFileSync,
-  existsSync,
-} from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -153,9 +148,7 @@ describe('PKG_VERSION', () => {
   });
 
   it('matches package.json version', () => {
-    const pkg = JSON.parse(
-      readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf-8'),
-    );
+    const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf-8'));
     assert.equal(PKG_VERSION, pkg.version);
   });
 });
@@ -350,7 +343,10 @@ describe('scaffold hashes skipped files so resync does not produce .new', () => 
 
     const config = JSON.parse(readFileSync(join(cwd, '.dual-agent-loop.json'), 'utf-8'));
     assert.ok(config.file_hashes['AGENTS.md'], 'skipped file should have a baseline hash');
-    assert.ok(config.managed_files.includes('AGENTS.md'), 'skipped file should be in managed_files');
+    assert.ok(
+      config.managed_files.includes('AGENTS.md'),
+      'skipped file should be in managed_files',
+    );
 
     // Resync (same version) — should NOT create AGENTS.md.new
     const { exitCode: resyncCode } = runCli(cwd, ['--yes']);

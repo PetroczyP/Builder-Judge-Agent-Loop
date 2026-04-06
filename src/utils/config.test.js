@@ -88,7 +88,11 @@ describe('normalizeConfig', () => {
   });
 
   it('passes through fields not in the mapping', () => {
-    const result = normalizeConfig({ version: '0.3.0', specs_dir: 'specs', loop_dir: 'agent-loop' });
+    const result = normalizeConfig({
+      version: '0.3.0',
+      specs_dir: 'specs',
+      loop_dir: 'agent-loop',
+    });
     assert.equal(result.version, '0.3.0');
     assert.equal(result.specs_dir, 'specs');
     assert.equal(result.loop_dir, 'agent-loop');

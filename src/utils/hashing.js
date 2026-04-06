@@ -43,10 +43,10 @@ export function compareFile({ storedHash, diskContent, newTemplateContent }) {
   const userTouched = diskHash !== storedHash;
   const templateChanged = newHash !== storedHash;
 
-  if (!userTouched && templateChanged) return { action: 'overwrite', newHash };  // Row 1: safe to overwrite
-  if (!userTouched && !templateChanged) return { action: 'skip', newHash };      // Row 2: nothing to do
-  if (userTouched && templateChanged) return { action: 'conflict', newHash };    // Row 3: conflict
-  return { action: 'skip', newHash };                                            // Row 4: keep user's version
+  if (!userTouched && templateChanged) return { action: 'overwrite', newHash }; // Row 1: safe to overwrite
+  if (!userTouched && !templateChanged) return { action: 'skip', newHash }; // Row 2: nothing to do
+  if (userTouched && templateChanged) return { action: 'conflict', newHash }; // Row 3: conflict
+  return { action: 'skip', newHash }; // Row 4: keep user's version
 }
 
 /**

@@ -226,10 +226,7 @@ describe('S5 — pre-hash upgrade (no file_hashes in config)', () => {
 
     // pending_hashes should be populated
     assert.ok(result.pending_hashes, 'pending_hashes should exist');
-    assert.ok(
-      Object.keys(result.pending_hashes).length > 0,
-      'pending_hashes should have entries',
-    );
+    assert.ok(Object.keys(result.pending_hashes).length > 0, 'pending_hashes should have entries');
   });
 });
 
@@ -734,10 +731,7 @@ describe('S5/AC-8 — pre-hash upgrade: existing files get .new, missing files c
 
     // Missing files should be created directly (no .new)
     for (const file of filesToSkip) {
-      assert.ok(
-        existsSync(join(cwd, file.dest)),
-        `missing file ${file.dest} should be created`,
-      );
+      assert.ok(existsSync(join(cwd, file.dest)), `missing file ${file.dest} should be created`);
       assert.ok(
         !existsSync(join(cwd, file.dest + '.new')),
         `missing file ${file.dest} should NOT get .new`,
@@ -861,14 +855,8 @@ describe('AC-14 — removed file .new header updated to removed variant', () => 
       updatedContent.includes('REMOVED TEMPLATE:'),
       '.new header should be updated to removed variant',
     );
-    assert.ok(
-      !updatedContent.includes('CONFLICT:'),
-      'old CONFLICT header should be replaced',
-    );
-    assert.ok(
-      updatedContent.includes('Template content here'),
-      'body content should be preserved',
-    );
+    assert.ok(!updatedContent.includes('CONFLICT:'), 'old CONFLICT header should be replaced');
+    assert.ok(updatedContent.includes('Template content here'), 'body content should be preserved');
 
     const result = readConfigFile(cwd);
     // pending_hashes entry should be cleaned
@@ -880,11 +868,7 @@ describe('AC-14 — removed file .new header updated to removed variant', () => 
       );
     }
     // file_hashes entry should be cleaned
-    assert.equal(
-      result.file_hashes[removedDest],
-      undefined,
-      'removed file hash should be gone',
-    );
+    assert.equal(result.file_hashes[removedDest], undefined, 'removed file hash should be gone');
   });
 });
 
@@ -1248,14 +1232,8 @@ describe('managed .new file includes HTML comment header', () => {
       newContent.includes(`CONFLICT: ${targetDest}`),
       '.new header should reference the file path',
     );
-    assert.ok(
-      newContent.includes('Merge manually'),
-      '.new header should list merge options',
-    );
-    assert.ok(
-      newContent.includes('re-generated'),
-      '.new header should mention regeneration',
-    );
+    assert.ok(newContent.includes('Merge manually'), '.new header should list merge options');
+    assert.ok(newContent.includes('re-generated'), '.new header should mention regeneration');
   });
 });
 
@@ -1473,7 +1451,11 @@ describe('FR8 — CLAUDE.md is excluded from file_hashes', () => {
     });
 
     const result = readConfigFile(cwd);
-    assert.equal(result.file_hashes['CLAUDE.md'], undefined, 'CLAUDE.md must not be in file_hashes');
+    assert.equal(
+      result.file_hashes['CLAUDE.md'],
+      undefined,
+      'CLAUDE.md must not be in file_hashes',
+    );
     assert.ok(
       !result.managed_files.includes('CLAUDE.md'),
       'CLAUDE.md must not be in managed_files',
@@ -1508,7 +1490,11 @@ describe('detectRemovedFiles tier-2 — file_hashes keys without managed_files',
     });
 
     const result = readConfigFile(cwd);
-    assert.equal(result.file_hashes[removedDest], undefined, 'removed file should be cleaned from file_hashes');
+    assert.equal(
+      result.file_hashes[removedDest],
+      undefined,
+      'removed file should be cleaned from file_hashes',
+    );
   });
 });
 
@@ -1597,7 +1583,11 @@ describe('convergence regenerate does not override create for missing files', ()
 
     const result = readConfigFile(cwd);
     assert.ok(result.file_hashes[targetDest], 'file hash must be recorded');
-    assert.equal(result.pending_hashes?.[targetDest], undefined, 'no pending hash for created file');
+    assert.equal(
+      result.pending_hashes?.[targetDest],
+      undefined,
+      'no pending hash for created file',
+    );
   });
 });
 

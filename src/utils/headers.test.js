@@ -1,10 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  managedFileHeader,
-  removedFileHeader,
-  updateHeaderToRemoved,
-} from './headers.js';
+import { managedFileHeader, removedFileHeader, updateHeaderToRemoved } from './headers.js';
 
 describe('managedFileHeader', () => {
   it('returns an HTML comment block', () => {
@@ -22,15 +18,9 @@ describe('managedFileHeader', () => {
   it('mentions all 4 options: merge manually, let Claude merge, ignore, reject', () => {
     const header = managedFileHeader('agent-loop/PROTOCOL.md');
     assert.ok(header.includes('Merge manually'), 'missing "Merge manually"');
-    assert.ok(
-      header.includes('Let Claude Code merge'),
-      'missing "Let Claude Code merge"',
-    );
+    assert.ok(header.includes('Let Claude Code merge'), 'missing "Let Claude Code merge"');
     assert.ok(header.includes('Ignore for now'), 'missing "Ignore for now"');
-    assert.ok(
-      header.includes('Reject changes'),
-      'missing "Reject changes"',
-    );
+    assert.ok(header.includes('Reject changes'), 'missing "Reject changes"');
   });
 
   it('mentions the file will be re-generated if deleted without merging', () => {
@@ -59,20 +49,14 @@ describe('removedFileHeader', () => {
 
   it('mentions 2 options: merge into your copy, discard', () => {
     const header = removedFileHeader('.claude/commands/build.md');
-    assert.ok(
-      header.includes('Merge the relevant changes'),
-      'missing merge option',
-    );
+    assert.ok(header.includes('Merge the relevant changes'), 'missing merge option');
     assert.ok(header.includes('Discard'), 'missing discard option');
   });
 
   it('warns this is the only copy and will NOT be re-generated', () => {
     const header = removedFileHeader('.claude/commands/build.md');
     assert.ok(header.includes('ONLY COPY'), 'missing ONLY COPY warning');
-    assert.ok(
-      header.includes('NOT be re-generated'),
-      'missing NOT be re-generated warning',
-    );
+    assert.ok(header.includes('NOT be re-generated'), 'missing NOT be re-generated warning');
   });
 });
 
@@ -84,15 +68,9 @@ describe('updateHeaderToRemoved', () => {
 
     const updated = updateHeaderToRemoved(content, dest);
 
-    assert.ok(
-      updated.startsWith(removedFileHeader(dest)),
-      'should start with removed header',
-    );
+    assert.ok(updated.startsWith(removedFileHeader(dest)), 'should start with removed header');
     assert.ok(updated.endsWith(body), 'should preserve body content');
-    assert.ok(
-      !updated.includes('CONFLICT:'),
-      'should not contain managed header marker',
-    );
+    assert.ok(!updated.includes('CONFLICT:'), 'should not contain managed header marker');
   });
 
   it('returns content unchanged when no managed header is present', () => {

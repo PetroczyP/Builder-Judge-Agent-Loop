@@ -31,18 +31,14 @@ export async function run(args) {
 
   // Unreadable config (permission denied, locked) — distinct from corrupt
   if (result.status === 'unreadable') {
-    console.error(
-      `\n  Error: Cannot read .dual-agent-loop.json: ${result.error.message}\n`,
-    );
+    console.error(`\n  Error: Cannot read .dual-agent-loop.json: ${result.error.message}\n`);
     process.exitCode = 1;
     return;
   }
 
   // Corrupt config (invalid JSON, non-object) is always a hard error
   if (result.status === 'corrupt') {
-    console.error(
-      `\n  Error: Failed to parse .dual-agent-loop.json: ${result.error.message}\n`,
-    );
+    console.error(`\n  Error: Failed to parse .dual-agent-loop.json: ${result.error.message}\n`);
     process.exitCode = 1;
     return;
   }
@@ -87,9 +83,7 @@ export async function run(args) {
         return;
       }
     }
-    console.log(
-      `\n  Existing setup found (v${configVersion}). Upgrading to v${PKG_VERSION}...\n`,
-    );
+    console.log(`\n  Existing setup found (v${configVersion}). Upgrading to v${PKG_VERSION}...\n`);
   }
 
   const mergePromptFn = await createMergePromptFn(flags);
@@ -157,7 +151,9 @@ async function createPromptFn(flags) {
 
   const enquirer = await loadEnquirer();
   if (!enquirer) {
-    console.log('  (enquirer not installed — prompts will be auto-accepted; use --yes to suppress this message)\n');
+    console.log(
+      '  (enquirer not installed — prompts will be auto-accepted; use --yes to suppress this message)\n',
+    );
     return async () => true;
   }
 

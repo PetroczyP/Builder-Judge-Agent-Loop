@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getTemplateVars, getFilesToScaffold, getNextSteps, AGENTS, REMOVED_TEMPLATES } from '../utils/agents.js';
+import {
+  getTemplateVars,
+  getFilesToScaffold,
+  getNextSteps,
+  AGENTS,
+  REMOVED_TEMPLATES,
+} from '../utils/agents.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -604,12 +610,14 @@ describe('REMOVED_TEMPLATES', () => {
   });
 
   it('no overlap with current getFilesToScaffold destinations', () => {
-    const removedDests = REMOVED_TEMPLATES.map(e => e.dest);
+    const removedDests = REMOVED_TEMPLATES.map((e) => e.dest);
     for (const mode of ['single', 'dual']) {
-      const currentDests = getFilesToScaffold({ agentMode: mode }).map(f => f.dest);
+      const currentDests = getFilesToScaffold({ agentMode: mode }).map((f) => f.dest);
       for (const dest of removedDests) {
-        assert.ok(!currentDests.includes(dest),
-          `${dest} is in both REMOVED_TEMPLATES and getFilesToScaffold(${mode})`);
+        assert.ok(
+          !currentDests.includes(dest),
+          `${dest} is in both REMOVED_TEMPLATES and getFilesToScaffold(${mode})`,
+        );
       }
     }
   });
