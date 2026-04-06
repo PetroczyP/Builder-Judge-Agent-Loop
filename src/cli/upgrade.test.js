@@ -1600,3 +1600,58 @@ describe('convergence regenerate does not override create for missing files', ()
     assert.equal(result.pending_hashes?.[targetDest], undefined, 'no pending hash for created file');
   });
 });
+
+// ── Single agent mode upgrade ───────────────────────────────────────
+
+describe('upgrade with single agent mode', () => {
+  const SINGLE_CONFIG = {
+    ...BASE_CONFIG,
+    agent_mode: 'single',
+    judge: 'claude',
+  };
+
+  it('manages the correct file set for single mode and detects dual-only files as removed', async () => {
+    const cwd = makeTmpDir();
+
+    // Scaffold with dual mode first, then upgrade to single
+    const dualNormalized = normalizeConfig(BASE_CONFIG);
+    const dualFiles = getFilesToScaffold(dualNormalized);
+    const dualVars = getTemplateVars(dualNormalized);
+    const fileHashes = {};
+    for (const file of dualFiles) {
+      const destPath = join(cwd, file.dest);
+      mkdirSync(join(cwd, ...file.dest.split('/').slice(0, -1)), { recursive: true });
+      const content = loadTemplate(file.src, dualVars);
+      writeFileSync(destPath, content);
+      fileHashes[file.dest] = computeHash(content);
+    }
+
+    const storedConfig = {
+      ...SINGLE_CONFIG,
+      version: '0.2.0',
+      file_hashes: fileHashes,
+      managed_files: dualFiles.map((f) => f.dest),
+    };
+    writeFileSync(join(cwd, '.dual-agent-loop.json'), JSON.stringify(storedConfig, null, 2) + '\n');
+
+    await upgrade({
+      cwd,
+      flags: { force: false, nonInteractive: true },
+      config: storedConfig,
+      promptFn: async () => true,
+      pkgVersion: '0.3.0',
+    });
+
+    const result = readConfigFile(cwd);
+
+    // Single mode should have different managed files than dual mode
+    const singleNormalized = normalizeConfig(SINGLE_CONFIG);
+    const singleFiles = getFilesToScaffold(singleNormalized);
+    const singleDests = singleFiles.map((f) => f.dest);
+
+    for (const dest of singleDests) {
+      assert.ok(result.file_hashes[dest], `single-mode file ${dest} must have hash`);
+    }
+    assert.deepEqual(result.managed_files, singleDests);
+  });
+});

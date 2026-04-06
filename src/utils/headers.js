@@ -13,7 +13,7 @@ export function managedFileHeader(dest) {
     '    1. Merge manually — compare this file with your current version',
     '    2. Let Claude Code merge — paste the suggested prompt from the upgrade output',
     '    3. Ignore for now — this file will be re-generated on the next upgrade',
-    '    4. Reject changes — delete this file; it will be re-generated on the next upgrade',
+    '    4. Reject changes — delete this file; on the next upgrade you will be asked to confirm',
     '  ',
     `  To complete the merge, delete this .new file and confirm when prompted on next run.`,
     '-->',

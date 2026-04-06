@@ -58,7 +58,7 @@ export function normalizeConfig(stored) {
 /**
  * Read the config file from disk.
  * @param {string} cwd
- * @returns {{ status: 'found', config: object } | { status: 'missing' } | { status: 'corrupt', error: Error }}
+ * @returns {{ status: 'found', config: object } | { status: 'missing' } | { status: 'unreadable', error: Error } | { status: 'corrupt', error: Error }}
  */
 export function readConfig(cwd) {
   const filePath = join(cwd, CONFIG_FILE);
@@ -67,8 +67,14 @@ export function readConfig(cwd) {
     return { status: 'missing' };
   }
 
+  let raw;
   try {
-    const raw = readFileSync(filePath, 'utf-8');
+    raw = readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    return { status: 'unreadable', error: err };
+  }
+
+  try {
     const config = JSON.parse(raw);
     if (!config || typeof config !== 'object' || Array.isArray(config)) {
       return { status: 'corrupt', error: new Error('Config must be a JSON object') };

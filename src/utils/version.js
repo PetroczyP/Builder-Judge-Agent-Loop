@@ -6,7 +6,10 @@
  * @returns {-1 | 0 | 1}
  */
 export function compareVersions(a, b) {
-  const parse = (v) => {
+  function parse(v) {
+    if (typeof v !== 'string') {
+      throw new Error(`Version must be a string, got ${typeof v}: ${JSON.stringify(v)}`);
+    }
     const parts = v.split('.').map(Number);
     for (const seg of parts) {
       if (!Number.isFinite(seg)) {
@@ -14,7 +17,7 @@ export function compareVersions(a, b) {
       }
     }
     return parts;
-  };
+  }
   const partsA = parse(a);
   const partsB = parse(b);
   const len = Math.max(partsA.length, partsB.length);

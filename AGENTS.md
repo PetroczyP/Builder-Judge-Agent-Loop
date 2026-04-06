@@ -15,9 +15,14 @@ Repository-wide instructions for all agents working in this repo.
 
 ```
 bin/create-dual-agent-loop.js   → thin entry, calls run() from src/index.js
-src/index.js                    → parses --force/--yes, delegates to scaffold()
-src/cli/scaffold.js             → core: prompts → config → template rendering → file writes
-src/utils/agents.js             → AGENTS registry, getTemplateVars(), getFilesToScaffold()
+src/index.js                    → arg parsing, subcommand routing (bare run vs upgrade), config reading, version guards
+src/cli/scaffold.js             → initial setup: prompts → config → template rendering → file writes
+src/cli/upgrade.js              → upgrade flow: convergence pass, three-way compare, conflict handling, removed-file detection
+src/utils/agents.js             → AGENTS registry, getTemplateVars(), getFilesToScaffold(), REMOVED_TEMPLATES
+src/utils/config.js             → config normalization (snake_case → camelCase), read/write .dual-agent-loop.json
+src/utils/hashing.js            → SHA-256 hashing, three-way compareFile(), convergencePass()
+src/utils/headers.js            → .new sidecar HTML comment headers (conflict, removed)
+src/utils/version.js            → semver-style version comparison
 src/templates/                  → Markdown/JSON with {{VAR}} placeholders (agents/, commands/, protocol/, task/)
 agent-loop/                     → dogfooding instance of the protocol for THIS project
 specs/                          → backlog and feature specs
@@ -46,7 +51,7 @@ No build/transpile step — source JS is shipped directly. Tests are co-located 
 
 - **Package**: `create-dual-agent-loop` — `create-*` convention for `npm init dual-agent-loop`
 - **Task folders**: `NNN-task-name/` (zero-padded 3-digit, kebab-case) under `agent-loop/`
-- **Template vars**: `{{UPPER_SNAKE_CASE}}` — 10 variables including `{{COORDINATOR_NAME}}`, `{{BUILDER_AGENT_NAME}}`, etc.
+- **Template vars**: `{{UPPER_SNAKE_CASE}}` — 9 variables including `{{COORDINATOR_NAME}}`, `{{BUILDER_AGENT_NAME}}`, etc.
 - **Finding IDs**: `B-1` (blocker), `H-1` (high), `M-1` (medium), `L-1` (low)
 - **Slash commands**: `loop.<verb>.md` in `.claude/commands/`
 - **Protocol phases**: `specify → design → plan → build → test → release`

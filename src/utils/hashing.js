@@ -8,6 +8,9 @@ import { join } from 'node:path';
  * @returns {string} hex-encoded SHA-256 hash
  */
 export function computeHash(content) {
+  if (typeof content !== 'string') {
+    throw new TypeError(`computeHash expected string, got ${typeof content}`);
+  }
   return createHash('sha256').update(content, 'utf-8').digest('hex');
 }
 
@@ -31,7 +34,7 @@ export function compareFile({ storedHash, diskContent, newTemplateContent }) {
     return { action: 'create', newHash };
   }
 
-  // Row 6: No stored hash, file exists on disk — pre-hash conflict
+  // Row 6: No stored hash (null/undefined/empty), file exists on disk — pre-hash conflict
   if (!storedHash) {
     return { action: 'conflict_prehash', newHash };
   }
@@ -51,6 +54,8 @@ export function compareFile({ storedHash, diskContent, newTemplateContent }) {
  *
  * Checks pending_hashes entries to see if conflicts have been resolved
  * (i.e. the `.new` side-car file has been removed by the user).
+ * Entries where the `.new` file still exists are skipped — the subsequent
+ * three-way comparison handles them by overwriting the `.new` with the latest template.
  *
  * @param {Object} params
  * @param {Object} params.pendingHashes - map of dest → hash from pending_hashes

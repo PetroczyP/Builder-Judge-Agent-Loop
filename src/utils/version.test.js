@@ -46,4 +46,10 @@ describe('compareVersions', () => {
     assert.throws(() => compareVersions('1.0.0', 'latest'), /Invalid version string/);
     assert.throws(() => compareVersions('abc', '1.0.0'), /Invalid version string/);
   });
+
+  it('throws on non-string version input', () => {
+    assert.throws(() => compareVersions(123, '1.0.0'), /Version must be a string/);
+    assert.throws(() => compareVersions('1.0.0', true), /Version must be a string/);
+    assert.throws(() => compareVersions(null, '1.0.0'), /Version must be a string/);
+  });
 });

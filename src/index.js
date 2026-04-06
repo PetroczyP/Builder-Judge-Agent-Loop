@@ -29,7 +29,16 @@ export async function run(args) {
 
   const result = readConfig(cwd);
 
-  // Corrupt config is always a hard error
+  // Unreadable config (permission denied, locked) — distinct from corrupt
+  if (result.status === 'unreadable') {
+    console.error(
+      `\n  Error: Cannot read .dual-agent-loop.json: ${result.error.message}\n`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  // Corrupt config (invalid JSON, non-object) is always a hard error
   if (result.status === 'corrupt') {
     console.error(
       `\n  Error: Failed to parse .dual-agent-loop.json: ${result.error.message}\n`,
@@ -105,22 +114,22 @@ export function parseArgs(args) {
 }
 
 async function loadEnquirer() {
-  const Enquirer = (await import('enquirer')).default;
-  return new Enquirer();
-}
-
-async function createMergePromptFn(flags) {
-  if (flags.nonInteractive) return null;
-
-  let enquirer;
   try {
-    enquirer = await loadEnquirer();
+    const Enquirer = (await import('enquirer')).default;
+    return new Enquirer();
   } catch (err) {
     if (err.code === 'ERR_MODULE_NOT_FOUND' || err.code === 'MODULE_NOT_FOUND') {
       return null;
     }
     throw err;
   }
+}
+
+async function createMergePromptFn(flags) {
+  if (flags.nonInteractive) return null;
+
+  const enquirer = await loadEnquirer();
+  if (!enquirer) return null;
 
   return async () => {
     try {
@@ -143,18 +152,13 @@ async function createMergePromptFn(flags) {
 
 async function createPromptFn(flags) {
   if (flags.nonInteractive) {
-    return async () => false;
+    return async () => true;
   }
 
-  let enquirer;
-  try {
-    enquirer = await loadEnquirer();
-  } catch (err) {
-    if (err.code === 'ERR_MODULE_NOT_FOUND' || err.code === 'MODULE_NOT_FOUND') {
-      console.log('  (using defaults — install enquirer for interactive prompts)\n');
-      return async () => false;
-    }
-    throw err;
+  const enquirer = await loadEnquirer();
+  if (!enquirer) {
+    console.log('  (enquirer not installed — prompts will be auto-accepted; use --yes to suppress this message)\n');
+    return async () => true;
   }
 
   return async (question) => {

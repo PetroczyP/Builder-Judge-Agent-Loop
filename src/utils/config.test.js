@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { CONFIG_DEFAULTS, normalizeConfig, readConfig, writeConfig } from './config.js';
@@ -204,5 +204,19 @@ describe('writeConfig', () => {
     const result = readConfig(tmp);
     assert.equal(result.status, 'found');
     assert.deepEqual(result.config, { coordinator: 'Solo' });
+  });
+
+  it('returns unreadable status for permission-denied files', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'dal-test-'));
+    const filePath = join(tmp, '.dual-agent-loop.json');
+    writeFileSync(filePath, '{"valid": true}');
+    chmodSync(filePath, 0o000);
+
+    const result = readConfig(tmp);
+    assert.equal(result.status, 'unreadable');
+    assert.ok(result.error);
+
+    // Restore permissions for cleanup
+    chmodSync(filePath, 0o644);
   });
 });

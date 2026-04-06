@@ -281,3 +281,22 @@ describe('convergencePass', () => {
   });
 });
 
+describe('computeHash input validation', () => {
+  it('throws TypeError on non-string input', () => {
+    assert.throws(() => computeHash(null), /computeHash expected string/);
+    assert.throws(() => computeHash(undefined), /computeHash expected string/);
+    assert.throws(() => computeHash(123), /computeHash expected string/);
+  });
+});
+
+describe('compareFile with empty-string storedHash', () => {
+  it('treats empty-string storedHash as falsy (conflict_prehash)', () => {
+    const result = compareFile({
+      storedHash: '',
+      diskContent: 'existing content',
+      newTemplateContent: 'new content',
+    });
+    assert.equal(result.action, 'conflict_prehash');
+  });
+});
+

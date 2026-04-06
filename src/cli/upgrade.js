@@ -6,6 +6,7 @@ import { getFilesToScaffold, getTemplateVars, REMOVED_TEMPLATES } from '../utils
 import { managedFileHeader, updateHeaderToRemoved } from '../utils/headers.js';
 import { loadTemplate } from './scaffold.js';
 
+// Step 1: Force upgrade (early return)
 export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkgVersion }) {
   const normalized = normalizeConfig(config);
   const files = getFilesToScaffold(normalized);
@@ -35,14 +36,18 @@ export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkg
     for (const file of files) {
       const sidecar = join(cwd, file.dest + '.new');
       if (existsSync(sidecar)) {
-        unlinkSync(sidecar);
-        console.log(`  clean    ${file.dest}.new (stale sidecar removed)`);
+        try {
+          unlinkSync(sidecar);
+          console.log(`  clean    ${file.dest}.new (stale sidecar removed)`);
+        } catch (err) {
+          console.warn(`  warn     ${file.dest}.new (could not remove: ${err.message})`);
+        }
       }
     }
 
     handleClaudeMd(cwd, vars);
 
-    const removed = detectRemovedFiles(config, currentManagedSet, cwd);
+    const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.agentMode);
     handleRemovedFiles(removed, config, pendingHashes, fileHashes, cwd);
 
     writeConfig(
@@ -151,7 +156,7 @@ export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkg
   handleClaudeMd(cwd, vars);
 
   // Step 6: Removed-file detection
-  const removed = detectRemovedFiles(config, currentManagedSet, cwd);
+  const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.agentMode);
   handleRemovedFiles(removed, config, pendingHashes, fileHashes, cwd);
 
   // Step 7: Merge wizard
@@ -218,23 +223,21 @@ function handleClaudeMd(cwd, vars) {
   }
 }
 
-function detectRemovedFiles(config, currentManagedSet, cwd) {
-  let previousManaged;
-  if (config.managed_files && config.managed_files.length > 0) {
-    // Post-hash user: explicit list of previously managed files
-    previousManaged = config.managed_files;
-  } else if (config.file_hashes && Object.keys(config.file_hashes).length > 0) {
-    // Pre-hash user with hashes but no managed_files list
-    previousManaged = Object.keys(config.file_hashes);
-  } else {
-    // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by mode
-    const mode = normalizeConfig(config).agentMode;
-    previousManaged = REMOVED_TEMPLATES
-      .filter((r) => r.modes.includes(mode) && existsSync(join(cwd, r.dest)))
-      .map((r) => r.dest);
-  }
+function detectRemovedFiles(config, currentManagedSet, cwd, agentMode) {
+  const filter = (list) => list.filter((dest) => !currentManagedSet.has(dest));
 
-  return previousManaged.filter((dest) => !currentManagedSet.has(dest));
+  if (config.managed_files && config.managed_files.length > 0) {
+    return filter(config.managed_files);
+  }
+  if (config.file_hashes && Object.keys(config.file_hashes).length > 0) {
+    return filter(Object.keys(config.file_hashes));
+  }
+  // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by mode
+  return filter(
+    REMOVED_TEMPLATES
+      .filter((r) => r.modes.includes(agentMode) && existsSync(join(cwd, r.dest)))
+      .map((r) => r.dest),
+  );
 }
 
 /**
@@ -258,10 +261,10 @@ function handleRemovedFiles(removed, originalConfig, pendingHashes, fileHashes, 
       } else {
         console.log(`  removed  ${dest} (template no longer managed)`);
       }
+      delete pendingHashes[dest];
+      delete fileHashes[dest];
     } catch (err) {
       console.warn(`  warn     ${dest} (removed-file handling failed: ${err.message})`);
     }
-    delete pendingHashes[dest];
-    delete fileHashes[dest];
   }
 }
