@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getTemplateVars, getFilesToScaffold, getNextSteps, AGENTS } from '../utils/agents.js';
+import { getTemplateVars, getFilesToScaffold, getNextSteps, AGENTS, REMOVED_TEMPLATES } from '../utils/agents.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
@@ -572,5 +572,45 @@ describe('config version', () => {
       'scaffold.js must read version from package.json, not hardcode it',
     );
     assert.ok(pkg.version, 'package.json must have a version field');
+  });
+});
+
+// ── Scaffold Exports Tests ──────────────────────────────────────
+
+describe('scaffold exports', () => {
+  it('exports loadTemplate function', async () => {
+    const mod = await import('../cli/scaffold.js');
+    assert.equal(typeof mod.loadTemplate, 'function');
+  });
+});
+
+// ── REMOVED_TEMPLATES Tests ─────────────────────────────────────
+
+describe('REMOVED_TEMPLATES', () => {
+  it('is an array', () => {
+    assert.ok(Array.isArray(REMOVED_TEMPLATES));
+  });
+
+  it('is frozen', () => {
+    assert.ok(Object.isFrozen(REMOVED_TEMPLATES));
+  });
+
+  it('entries have required schema (version, modes, dest)', () => {
+    for (const entry of REMOVED_TEMPLATES) {
+      assert.ok(typeof entry.version === 'string', 'version must be a string');
+      assert.ok(Array.isArray(entry.modes), 'modes must be an array');
+      assert.ok(typeof entry.dest === 'string', 'dest must be a string');
+    }
+  });
+
+  it('no overlap with current getFilesToScaffold destinations', () => {
+    const removedDests = REMOVED_TEMPLATES.map(e => e.dest);
+    for (const mode of ['single', 'dual']) {
+      const currentDests = getFilesToScaffold({ agentMode: mode }).map(f => f.dest);
+      for (const dest of removedDests) {
+        assert.ok(!currentDests.includes(dest),
+          `${dest} is in both REMOVED_TEMPLATES and getFilesToScaffold(${mode})`);
+      }
+    }
   });
 });

@@ -122,3 +122,16 @@ export function getNextSteps(config) {
     `    3. In ${judge.displayName}: ${judge.judgeCommand}`,
   ];
 }
+
+/**
+ * Registry of files that have been removed from the managed template set.
+ * Used for removed-file detection during upgrade, especially for pre-hash users
+ * who have no `managed_files` or `file_hashes` to compare against.
+ *
+ * When a file is removed from getFilesToScaffold(), add an entry here
+ * with the version it was removed in, which modes it applied to, and
+ * its destination path.
+ *
+ * @type {ReadonlyArray<{version: string, modes: string[], dest: string}>}
+ */
+export const REMOVED_TEMPLATES = Object.freeze([]);

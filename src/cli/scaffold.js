@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { getTemplateVars, getFilesToScaffold, getNextSteps } from '../utils/agents.js';
+import { computeHash } from '../utils/hashing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(__dirname, '..', 'templates');
@@ -29,20 +30,29 @@ export async function scaffold(flags) {
   const files = getFilesToScaffold(config);
   const vars = getTemplateVars(config);
 
+  const fileHashes = {};
+  const managedFiles = [];
+
   let created = 0;
   let skipped = 0;
 
   for (const file of files) {
+    managedFiles.push(file.dest);
     const destPath = join(cwd, file.dest);
+    const content = loadTemplate(file.src, vars);
     if (existsSync(destPath) && !flags.force) {
+      // Store the template hash as baseline even for skipped files,
+      // so the next resync can do a proper three-way comparison
+      // instead of falling into the pre-hash conflict path.
+      fileHashes[file.dest] = computeHash(content);
       console.log(`  skip     ${file.dest} (exists)`);
       skipped++;
       continue;
     }
     try {
       mkdirSync(dirname(destPath), { recursive: true });
-      const content = loadTemplate(file.src, vars);
       writeFileSync(destPath, content);
+      fileHashes[file.dest] = computeHash(content);
     } catch (err) {
       throw new Error(`Failed to create ${file.dest}: ${err.message}`, { cause: err });
     }
@@ -92,6 +102,8 @@ export async function scaffold(flags) {
             max_rounds: config.maxRounds,
             specs_dir: 'specs',
             loop_dir: 'agent-loop',
+            file_hashes: fileHashes,
+            managed_files: managedFiles,
           },
           null,
           2,
@@ -192,7 +204,7 @@ async function gatherConfig(flags) {
   };
 }
 
-function loadTemplate(name, vars) {
+export function loadTemplate(name, vars) {
   const filePath = join(TEMPLATES_DIR, name);
   let content;
   try {
