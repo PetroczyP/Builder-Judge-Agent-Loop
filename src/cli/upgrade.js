@@ -226,10 +226,10 @@ function handleClaudeMd(cwd, vars) {
 function detectRemovedFiles(config, currentManagedSet, cwd, agentMode) {
   const filter = (list) => list.filter((dest) => !currentManagedSet.has(dest));
 
-  if (config.managed_files && config.managed_files.length > 0) {
+  if (Array.isArray(config.managed_files) && config.managed_files.length > 0) {
     return filter(config.managed_files);
   }
-  if (config.file_hashes && Object.keys(config.file_hashes).length > 0) {
+  if (config.file_hashes && typeof config.file_hashes === 'object' && !Array.isArray(config.file_hashes) && Object.keys(config.file_hashes).length > 0) {
     return filter(Object.keys(config.file_hashes));
   }
   // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by mode
