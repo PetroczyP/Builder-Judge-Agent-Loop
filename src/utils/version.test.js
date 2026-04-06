@@ -52,4 +52,11 @@ describe('compareVersions', () => {
     assert.throws(() => compareVersions('1.0.0', true), /Version must be a string/);
     assert.throws(() => compareVersions(null, '1.0.0'), /Version must be a string/);
   });
+
+  it('rejects empty segments and scientific notation', () => {
+    assert.throws(() => compareVersions('1..2', '1.0.0'), /Invalid version string/);
+    assert.throws(() => compareVersions('1.2.', '1.0.0'), /Invalid version string/);
+    assert.throws(() => compareVersions('1e3.0.0', '1.0.0'), /Invalid version string/);
+    assert.throws(() => compareVersions('', '1.0.0'), /Invalid version string/);
+  });
 });

@@ -210,7 +210,7 @@ function handleClaudeMd(cwd, vars) {
   try {
     if (existsSync(claudeMdPath)) {
       const existing = readFileSync(claudeMdPath, 'utf-8');
-      if (!existing.includes('Builder-Judge Workflow')) {
+      if (!/^#{1,6}\s+Builder-Judge Workflow\b/m.test(existing)) {
         appendFileSync(claudeMdPath, '\n' + claudeSection);
         console.log('  append   CLAUDE.md (added Builder-Judge Workflow section)');
       }

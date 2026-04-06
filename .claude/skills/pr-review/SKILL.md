@@ -124,7 +124,7 @@ gh api graphql \
   -F owner="$OWNER" -F name="$REPO" -F pr=$PR_NUMBER \
   -f query="$(cat /tmp/pr-threads.graphql)" > /tmp/pr-threads-raw.json
 
-# Parse: filter to unresolved+not-outdated, extract key fields, group by source
+# Parse: filter to unresolved (including outdated), extract key fields, group by source
 python3 -c "
 import json, sys
 

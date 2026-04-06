@@ -1,6 +1,7 @@
 /**
- * Compare two version strings (x.y.z format).
- * Non-numeric segments (e.g. pre-release suffixes) cause an error.
+ * Compare two dot-separated numeric version strings (e.g. "1.2.3", "0.3").
+ * Accepts any number of segments; missing segments are treated as 0.
+ * Non-digit segments (pre-release suffixes, empty segments, scientific notation) cause an error.
  * @param {string} a
  * @param {string} b
  * @returns {-1 | 0 | 1}
@@ -10,13 +11,13 @@ export function compareVersions(a, b) {
     if (typeof v !== 'string') {
       throw new Error(`Version must be a string, got ${typeof v}: ${JSON.stringify(v)}`);
     }
-    const parts = v.split('.').map(Number);
-    for (const seg of parts) {
-      if (!Number.isFinite(seg)) {
+    const segments = v.split('.');
+    for (const seg of segments) {
+      if (!/^\d+$/.test(seg)) {
         throw new Error(`Invalid version string: "${v}"`);
       }
     }
-    return parts;
+    return segments.map(Number);
   }
   const partsA = parse(a);
   const partsB = parse(b);

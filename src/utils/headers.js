@@ -44,7 +44,7 @@ export function removedFileHeader(dest) {
 
 // Must match the exact format produced by managedFileHeader().
 // If that format changes, update this pattern accordingly.
-const MANAGED_HEADER_PATTERN = /^<!--\n\s+CONFLICT:.*?-->\n/s;
+const MANAGED_HEADER_PATTERN = /^<!--\r?\n\s+CONFLICT:.*?-->\r?\n/s;
 
 /**
  * Replace a managed-file header with the removed-file variant.

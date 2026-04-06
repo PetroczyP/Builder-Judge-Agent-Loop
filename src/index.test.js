@@ -6,16 +6,19 @@ import {
   readFileSync,
   existsSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { parseArgs, PKG_VERSION } from './index.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function makeTmpDir() {
   return mkdtempSync(join(tmpdir(), 'dal-index-test-'));
 }
 
-const BIN = join(import.meta.dirname, '..', 'bin', 'create-dual-agent-loop.js');
+const BIN = join(__dirname, '..', 'bin', 'create-dual-agent-loop.js');
 
 /**
  * Run the CLI in a child process and return { stdout, stderr, exitCode }.
