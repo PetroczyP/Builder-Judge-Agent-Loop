@@ -36,7 +36,7 @@ specs/                          → backlog and feature specs
 
 ```sh
 npm install              # only runtime dep: enquirer
-npm test                 # Node.js built-in test runner (node --test src/**/*.test.js)
+npm test                 # Node.js built-in test runner
 npm run lint             # ESLint flat config
 npm run lint:fix         # auto-fix
 npm run format           # Prettier

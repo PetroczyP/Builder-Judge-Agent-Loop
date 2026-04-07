@@ -49,7 +49,7 @@ specs/                          → backlog and feature specs
 
 - Tests are co-located (`*.test.js` next to source)
 - Use `node:test` + `node:assert/strict` (Node.js built-in test runner)
-- Run with `npm test` (`node --test src/**/*.test.js`)
+- Run with `npm test` (`node --test src/*.test.js src/**/*.test.js`)
 
 ## Key Commands
 
