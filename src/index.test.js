@@ -148,7 +148,7 @@ describe('PKG_VERSION', () => {
   });
 
   it('matches package.json version', () => {
-    const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf-8'));
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
     assert.equal(PKG_VERSION, pkg.version);
   });
 });
