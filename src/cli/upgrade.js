@@ -135,6 +135,7 @@ export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkg
         case 'overwrite':
           writeFileSync(destPath, content);
           fileHashes[file.dest] = result.newHash;
+          delete pendingHashes[file.dest];
           console.log(`  update   ${file.dest}`);
           overwritten++;
           break;
