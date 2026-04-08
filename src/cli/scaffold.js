@@ -66,7 +66,7 @@ export async function scaffold(flags) {
     const claudeSection = loadTemplate('agents/CLAUDE.md.section', vars);
     if (existsSync(claudeMdPath)) {
       const existing = readFileSync(claudeMdPath, 'utf-8');
-      if (existing.includes('Builder-Judge Workflow')) {
+      if (/^#{1,6}\s+Builder-Judge Workflow\b/m.test(existing)) {
         console.log('  skip     CLAUDE.md (section already exists)');
       } else {
         appendFileSync(claudeMdPath, '\n' + claudeSection);
