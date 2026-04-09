@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: >
-  Monitor a PR for AI reviewer comments (CodeRabbit, Auggie, Copilot, humans),
+  Monitor a PR for reviewer comments (CodeRabbit, Auggie, Copilot, humans),
   validate each finding, fix valid ones or dismiss with explanation, batch commit,
   push, and resolve threads. Use when the user says "review PR", "fix PR comments",
   "address review feedback", or after creating a PR that has pending reviews.
@@ -13,10 +13,13 @@ allowed-tools:
   - Glob
   - Bash(gh *)
   - Bash(git *)
+  - Bash(python *)
   - Bash(cat /tmp/*)
-  - Bash(npm *)
+  - Bash(docker *)
+  - Bash(.venv/bin/*)
   - Agent
   - Skill
+disable-model-invocation: true
 ---
 
 # PR Review Monitor & Auto-Fix
@@ -121,9 +124,7 @@ gh api graphql \
   -F owner="$OWNER" -F name="$REPO" -F pr=$PR_NUMBER \
   -f query="$(cat /tmp/pr-threads.graphql)" > /tmp/pr-threads-raw.json
 
-# Parse: filter to unresolved, extract key fields, group by source
-# NOTE: Do NOT filter by isOutdated — outdated threads are still visible on GitHub
-# and need to be resolved. Mark them so they can be auto-dismissed if already fixed.
+# Parse: filter to unresolved (including outdated), extract key fields, group by source
 python3 -c "
 import json, sys
 
@@ -142,16 +143,11 @@ unresolved = [
         'author': t['comments']['nodes'][0]['author']['login'] if t['comments']['nodes'] else 'unknown',
         'body': t['comments']['nodes'][0]['body'] if t['comments']['nodes'] else '',
         'comment_count': len(t['comments']['nodes']),
+        'is_outdated': t['isOutdated'],
     }
     for t in threads
     if not t['isResolved']
 ]
-
-# Mark outdated threads for easy identification
-for u in unresolved:
-    tid = u['thread_id']
-    t_obj = next(t for t in threads if t['id'] == tid)
-    u['is_outdated'] = t_obj['isOutdated']
 
 # Classify source
 for u in unresolved:
@@ -319,8 +315,14 @@ Track: `dismissed: <path>#L<line> — <reason>`
 ### 4a. Run Tests
 
 ```bash
-# Run the project's test suite
-npm test 2>&1
+# Run the project's test suite (detect runner automatically)
+if [ -f package.json ]; then
+  npm test 2>&1
+elif [ -f .venv/bin/python ]; then
+  .venv/bin/python -m pytest -q 2>&1
+else
+  echo "No test runner detected — verify tests manually"
+fi
 ```
 
 If tests fail, identify which fix caused the failure, revert it (`git checkout -- <file>`), dismiss that thread with explanation, and re-run tests.

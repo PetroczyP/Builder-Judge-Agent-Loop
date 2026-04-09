@@ -20,9 +20,14 @@
 
 ```
 bin/create-dual-agent-loop.js   → thin CLI entry point, calls run() from src/index.js
-src/index.js                    → parses --force/--yes, delegates to scaffold()
-src/cli/scaffold.js             → core: prompts → config → template rendering → file writes
-src/utils/agents.js             → AGENTS registry, getTemplateVars(), getFilesToScaffold()
+src/index.js                    → arg parsing, subcommand routing (bare run vs upgrade), config reading, version guards
+src/cli/scaffold.js             → initial setup: prompts → config → template rendering → file writes
+src/cli/upgrade.js              → upgrade flow: convergence pass, three-way compare, conflict handling, removed-file detection
+src/utils/agents.js             → AGENTS registry, getTemplateVars(), getFilesToScaffold(), REMOVED_TEMPLATES
+src/utils/config.js             → config normalization (snake_case → camelCase), read/write .dual-agent-loop.json
+src/utils/hashing.js            → SHA-256 hashing, three-way compareFile(), convergencePass()
+src/utils/headers.js            → .new sidecar HTML comment headers (conflict, removed)
+src/utils/version.js            → semver-style version comparison
 src/templates/                  → Markdown/JSON with {{VAR}} placeholders
 agent-loop/                     → dogfooding instance of the protocol for THIS project
 specs/                          → backlog and feature specs
@@ -33,7 +38,7 @@ specs/                          → backlog and feature specs
 - Simple `split(key).join(value)` replacement — no template engine
 - Variables use `{{UPPER_SNAKE_CASE}}` format (e.g. `{{COORDINATOR_NAME}}`, `{{BUILDER_AGENT_NAME}}`)
 - Null/undefined values throw immediately (fail-fast)
-- 10 template variables defined in `getTemplateVars()` in `src/utils/agents.js`
+- 9 template variables defined in `getTemplateVars()` in `src/utils/agents.js`
 
 ## Agent Modes
 
@@ -44,7 +49,7 @@ specs/                          → backlog and feature specs
 
 - Tests are co-located (`*.test.js` next to source)
 - Use `node:test` + `node:assert/strict` (Node.js built-in test runner)
-- Run with `npm test` (`node --test src/**/*.test.js`)
+- Run with `npm test` (`node --test src/*.test.js src/**/*.test.js`)
 
 ## Key Commands
 

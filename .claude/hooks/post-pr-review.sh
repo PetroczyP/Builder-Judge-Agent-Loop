@@ -3,7 +3,7 @@
 # file so the pre-pr-review hook stops blocking PR creation / git push.
 #
 # This fires on PostToolUse for the Skill tool. It checks if the skill
-# invoked was "pr-review-toolkit:review-pr" or "review-pr".
+# invoked was "pr-review-toolkit:review-pr" or "pr-review".
 
 set -euo pipefail
 

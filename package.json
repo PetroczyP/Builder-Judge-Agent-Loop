@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "scaffold-self": "node scripts/scaffold-self.js",
-    "test": "node --test src/**/*.test.js",
+    "test": "node --test src/*.test.js src/**/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
