@@ -75,6 +75,44 @@ No JavaScript source code changes. Template-only enforcement.
 - **Isolation self-check is best-effort**: The `context: fork` detection heuristic catches the most common misuse (pasting instructions into active session) but cannot prevent all forms of context sharing.
 - **Legacy task compatibility**: Tasks created before this change work fine but don't get preflight verification benefits. The judge evaluates them on content merits.
 
+## Deviations from Plan
+
+None at the spec level — all 11 ACs delivered as specified. Two mid-phase corrections were made in response to judge findings but did not change the accepted spec:
+
+- **Build phase (H-1)**: Initial `loop.build.md` Step 5 bundled CoVe and anti-pattern check under a single optional-for-test/release scope. Fixed in build Round 2 by splitting the scope so the anti-pattern check remains mandatory on every phase while CoVe stays optional only for test/release.
+- **Design phase (3 rounds)**: Required two follow-up rounds to explicitly carry the 3+-phase-skip H-severity rule (R1 H-1) and the CoVe method-mismatch L-severity check (R2 M-1) from the spec into the judge-side enforcement path.
+
+## Key Decisions Made
+
+From spec/design phase summaries (see `builder-archive.md`). Decision IDs are namespaced by phase since both phases re-use D-1..D-n numbering.
+
+**Specify phase:**
+
+- **specify/D-1 (scope)**: Template-only changes in 4 files under `src/templates/`; no runtime behavior changes
+- **specify/D-2 (phase skipping)**: Allowed with per-phase justification; 3+ skips trigger H-severity finding
+- **specify/D-3 (CoVe)**: Categorize claims as external (web search) vs internal (repo search); judge flags method mismatches as L
+- **specify/D-4 (severity tiers)**: H for missing mandatory CoVe / 3+-phase skips; L for antipatterns and method mismatches
+- **specify/D-5 (isolation)**: Judge isolation via `context: fork` self-check (best-effort safety net)
+- **specify/D-6 (judge parity)**: `model: inherit` in `claude-judge.md` frontmatter for capability parity
+- **specify/D-7 (backwards compat)**: All new `status.json` fields (`skipped_phases`, `preflight`, `review_context`) optional; legacy tasks evaluated on content merits
+
+**Design phase:**
+
+- **design/D-2 (standalone pre-flight step)**: Pre-flight as standalone Step 5 — root cause fix for CoVe skipping (the misleading heading, not agent laziness)
+- **design/D-7 (test gate escape hatch)**: Test gate with escape hatch for non-behavioral rounds (template-only changes qualify)
+- **design/D-8 (CREATE-mode scope)**: Phase-skip guardrails apply in CREATE mode only; ADVANCE mode is sequential by definition
+
+## Anti-Patterns Encountered
+
+Four instances across the task lifecycle, all resolved before final acceptance:
+
+- **AP-002 (Cross-Document Contradiction) — design R1**: Added `### Anti-Pattern Check` to builder template but omitted from PROTOCOL.md change map. Raised as M-1 by the judge; resolved in R2.
+- **AP-002 (Cross-Document Contradiction) — design R2**: CoVe method-mismatch check added on builder side but missing from judge-side preflight enforcement. Raised as M-1 by the judge; resolved in R3.
+- **AP-002 (Cross-Document Contradiction) — build R1**: Builder and judge templates disagreed about whether anti-pattern check was mandatory in test/release phases. Raised as H-1 by the judge; resolved in R2 by splitting preflight scope.
+- **AP-001 (Unverified Verification) — release R1**: Builder's Round 1 response to the test-phase L-1 claimed "this release round includes the Verification section" when no `### Verification` block existed. Raised as L-1 by the judge (AP-001); corrected in R2 by rewriting the response to state that CoVe was intentionally skipped for release.
+
+No new anti-patterns were added to `ANTIPATTERNS.md` during this task — all encounters were existing patterns successfully caught by the judge.
+
 ## Backlog Leftovers
 
 - Backlog item #13 (upgrade experience) is directly related: existing users need to run `upgrade` to get the updated templates. Already tracked, no new items needed.
