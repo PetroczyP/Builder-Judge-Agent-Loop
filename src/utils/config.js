@@ -67,18 +67,18 @@ export function normalizeConfig(stored) {
   // Validate agent IDs and capabilities against the registry.
   // Uses Object.hasOwn to avoid prototype chain lookups (e.g., 'constructor').
   const validAgents = Object.keys(AGENTS).join(', ');
+  const validBuilders = Object.entries(AGENTS)
+    .filter(([, a]) => a.canBuild)
+    .map(([id]) => id)
+    .join(', ');
   if (typeof out.builderAgent !== 'string' || !Object.hasOwn(AGENTS, out.builderAgent)) {
     throw new Error(
-      `Invalid builder agent "${out.builderAgent}" in config. Valid agents: ${validAgents}`,
+      `Invalid builder agent "${out.builderAgent}" in config. Valid builder agents: ${validBuilders}`,
     );
   }
   if (!AGENTS[out.builderAgent].canBuild) {
-    const builders = Object.entries(AGENTS)
-      .filter(([, a]) => a.canBuild)
-      .map(([id]) => id)
-      .join(', ');
     throw new Error(
-      `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${builders}`,
+      `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${validBuilders}`,
     );
   }
   if (typeof out.judgeAgent !== 'string' || !Object.hasOwn(AGENTS, out.judgeAgent)) {
