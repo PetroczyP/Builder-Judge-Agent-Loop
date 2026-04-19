@@ -43,19 +43,42 @@ export const AGENTS = Object.freeze({
 });
 
 /**
+ * Validate a builder/judge agent pair against the registry.
+ * Uses Object.hasOwn to avoid prototype chain lookups (e.g., 'constructor').
+ * @returns {{ builder: object, judge: object }}
+ */
+function validateAgentPair(builderAgent, judgeAgent) {
+  if (typeof builderAgent !== 'string') {
+    throw new Error(`Builder agent must be a string, got ${typeof builderAgent}`);
+  }
+  if (typeof judgeAgent !== 'string') {
+    throw new Error(`Judge agent must be a string, got ${typeof judgeAgent}`);
+  }
+  if (!Object.hasOwn(AGENTS, builderAgent)) {
+    throw new Error(`Unknown builder agent: "${builderAgent}"`);
+  }
+  const builder = AGENTS[builderAgent];
+  if (!builder.canBuild) {
+    throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
+  }
+  if (!Object.hasOwn(AGENTS, judgeAgent)) {
+    throw new Error(`Unknown judge agent: "${judgeAgent}"`);
+  }
+  const judge = AGENTS[judgeAgent];
+  if (!judge.canJudge) {
+    throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
+  }
+  return { builder, judge };
+}
+
+/**
  * Derive ALL template variables from the full config object.
  * Returns both core vars (coordinator, release mode, max rounds)
  * and agent-specific vars (names, IDs, commands).
  */
 export function getTemplateVars(config) {
   const { builderAgent, judgeAgent } = config;
-
-  const builder = AGENTS[builderAgent];
-  const judge = AGENTS[judgeAgent];
-  if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
-  if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
-  if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
-  if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
+  const { builder, judge } = validateAgentPair(builderAgent, judgeAgent);
 
   const judgeName =
     builderAgent === judgeAgent ? `${judge.displayName} (judge mode)` : judge.displayName;
@@ -82,12 +105,7 @@ export function getTemplateVars(config) {
  */
 export function getFilesToScaffold(config) {
   const { builderAgent, judgeAgent } = config;
-  const builder = AGENTS[builderAgent];
-  if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
-  if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
-  const judge = AGENTS[judgeAgent];
-  if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
-  if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
+  const { judge } = validateAgentPair(builderAgent, judgeAgent);
 
   const files = [
     { src: 'protocol/PROTOCOL.md', dest: 'agent-loop/PROTOCOL.md' },
@@ -111,21 +129,17 @@ export function getFilesToScaffold(config) {
 
 /**
  * Return the "next steps" console output lines for the given configuration.
+ * Uses a condensed format when builder and judge are the same agent.
  */
 export function getNextSteps(config) {
   const { builderAgent, judgeAgent } = config;
-  const builder = AGENTS[builderAgent];
-  const judge = AGENTS[judgeAgent];
-  if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
-  if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
-  if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
-  if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
+  const { builder, judge } = validateAgentPair(builderAgent, judgeAgent);
 
   if (builderAgent === judgeAgent) {
     return [
       '  Next steps:',
       `    1. Review CLAUDE.md and ${judge.judgeDestination}`,
-      `    2. ${builder.builderCommandHint}`,
+      `    2. ${builder.builderCommandHint ?? '(no builder command)'}`,
       `    3. When ready for review: ${judge.judgeCommand}`,
     ];
   }
@@ -133,7 +147,7 @@ export function getNextSteps(config) {
   return [
     '  Next steps:',
     `    1. Review CLAUDE.md and ${judge.judgeDestination}`,
-    `    2. In ${builder.displayName}: ${builder.builderCommandHint}`,
+    `    2. In ${builder.displayName}: ${builder.builderCommandHint ?? '(no builder command)'}`,
     `    3. In ${judge.displayName}: ${judge.judgeCommand}`,
   ];
 }

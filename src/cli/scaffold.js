@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } fr
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { getTemplateVars, getFilesToScaffold, getNextSteps } from '../utils/agents.js';
+import { getTemplateVars, getFilesToScaffold, getNextSteps, AGENTS } from '../utils/agents.js';
 import { computeHash } from '../utils/hashing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -155,15 +155,18 @@ async function gatherConfig(flags) {
   try {
     console.log('  Builder: Claude Code\n');
 
+    const judgeChoices = Object.entries(AGENTS)
+      .filter(([, a]) => a.canJudge)
+      .map(([id, a]) => ({
+        name: id,
+        message: id === 'claude' ? `${a.displayName} (same agent judges)` : a.displayName,
+      }));
+
     ({ judgeAgent } = await enquirer.prompt({
       type: 'select',
       name: 'judgeAgent',
       message: 'Judge agent',
-      choices: [
-        { name: 'codex', message: 'Codex CLI' },
-        { name: 'claude', message: 'Claude Code (same agent judges)' },
-        { name: 'copilot', message: 'GitHub Copilot' },
-      ],
+      choices: judgeChoices,
       initial: 0,
     }));
 

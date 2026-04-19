@@ -7,7 +7,8 @@ const CONFIG_FILE = '.dual-agent-loop.json';
 /**
  * Default configuration values (camelCase, internal format).
  * Does NOT include judgeAgent — inferred from agentMode for backward
- * compatibility with pre-v0.4 configs; agentMode itself is derived, not primary.
+ * compatibility with configs that predate the explicit judge field;
+ * agentMode itself is derived, not primary.
  */
 export const CONFIG_DEFAULTS = Object.freeze({
   coordinator: 'Coordinator',
@@ -17,13 +18,13 @@ export const CONFIG_DEFAULTS = Object.freeze({
   maxRounds: 5,
 });
 
-const SNAKE_TO_CAMEL = {
+const SNAKE_TO_CAMEL = Object.freeze({
   agent_mode: 'agentMode',
   builder: 'builderAgent',
   judge: 'judgeAgent',
   release_mode: 'releaseMode',
   max_rounds: 'maxRounds',
-};
+});
 
 /**
  * Convert a snake_case stored config to camelCase internal format.
@@ -55,12 +56,18 @@ export function normalizeConfig(stored) {
   // Infer judgeAgent from agentMode ONLY for old configs that omit the judge field entirely.
   // Any explicit value (even null, "", false, 0) passes through to validation below.
   if (out.judgeAgent === undefined) {
+    if (out.agentMode !== 'single' && out.agentMode !== 'dual') {
+      console.warn(
+        `  Warning: unrecognized agent_mode "${out.agentMode}" in config — defaulting to dual`,
+      );
+    }
     out.judgeAgent = out.agentMode === 'single' ? 'claude' : 'codex';
   }
 
-  // Validate agent IDs and capabilities against the registry
+  // Validate agent IDs and capabilities against the registry.
+  // Uses Object.hasOwn to avoid prototype chain lookups (e.g., 'constructor').
   const validAgents = Object.keys(AGENTS).join(', ');
-  if (!AGENTS[out.builderAgent]) {
+  if (typeof out.builderAgent !== 'string' || !Object.hasOwn(AGENTS, out.builderAgent)) {
     throw new Error(
       `Invalid builder agent "${out.builderAgent}" in config. Valid agents: ${validAgents}`,
     );
@@ -74,7 +81,7 @@ export function normalizeConfig(stored) {
       `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${builders}`,
     );
   }
-  if (!AGENTS[out.judgeAgent]) {
+  if (typeof out.judgeAgent !== 'string' || !Object.hasOwn(AGENTS, out.judgeAgent)) {
     throw new Error(
       `Invalid judge agent "${out.judgeAgent}" in config. Valid agents: ${validAgents}`,
     );

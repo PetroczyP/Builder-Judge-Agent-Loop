@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +16,7 @@ describe('CONFIG_DEFAULTS', () => {
     assert.ok('maxRounds' in CONFIG_DEFAULTS);
   });
 
-  it('does NOT have judgeAgent (mode-dependent)', () => {
+  it('does NOT include judgeAgent in defaults', () => {
     assert.ok(!('judgeAgent' in CONFIG_DEFAULTS));
   });
 
@@ -73,7 +73,6 @@ describe('normalizeConfig', () => {
   it('preserves existing judgeAgent if present (even in single mode)', () => {
     const result = normalizeConfig({ agent_mode: 'single', judge: 'codex' });
     assert.equal(result.judgeAgent, 'codex');
-    // agentMode recomputed to match actual agents
     assert.equal(result.agentMode, 'dual');
   });
 
@@ -158,6 +157,28 @@ describe('normalizeConfig', () => {
     );
   });
 
+  it('rejects prototype property names as agent IDs', () => {
+    assert.throws(
+      () => normalizeConfig({ builder: 'constructor' }),
+      (err) => err.message.includes('Invalid builder agent'),
+    );
+    assert.throws(
+      () => normalizeConfig({ judge: 'toString' }),
+      (err) => err.message.includes('Invalid judge agent'),
+    );
+  });
+
+  it('rejects non-string builder types', () => {
+    assert.throws(
+      () => normalizeConfig({ builder: 42 }),
+      (err) => err.message.includes('Invalid builder agent'),
+    );
+    assert.throws(
+      () => normalizeConfig({ builder: ['claude'] }),
+      (err) => err.message.includes('Invalid builder agent'),
+    );
+  });
+
   it('passes through fields not in the mapping', () => {
     const result = normalizeConfig({
       version: '0.3.0',
@@ -167,6 +188,24 @@ describe('normalizeConfig', () => {
     assert.equal(result.version, '0.3.0');
     assert.equal(result.specs_dir, 'specs');
     assert.equal(result.loop_dir, 'agent-loop');
+  });
+});
+
+// ── normalizeConfig → agents.js integration ─────────────────────
+
+describe('normalizeConfig integration with agent functions', () => {
+  // Lazy import to keep config.test.js focused; this is a cross-module integration test
+  let getFilesToScaffold;
+  before(async () => {
+    ({ getFilesToScaffold } = await import('../cli/../utils/agents.js'));
+  });
+
+  it('normalizeConfig output is accepted by getFilesToScaffold for all judge agents', () => {
+    for (const judge of ['codex', 'claude', 'copilot']) {
+      const normalized = normalizeConfig({ builder: 'claude', judge });
+      const files = getFilesToScaffold(normalized);
+      assert.ok(files.length > 0, `getFilesToScaffold should return files for judge=${judge}`);
+    }
   });
 });
 

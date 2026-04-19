@@ -100,13 +100,14 @@ if [ -z "$CODEX_BIN" ] && command -v codex >/dev/null 2>&1; then
 fi
 
 # Tier 3: VS Code extension paths (newest first, verify each is executable)
+# Uses while-read to handle paths with spaces safely.
 if [ -z "$CODEX_BIN" ]; then
-  for candidate in $(ls -t ~/.vscode/extensions/openai.chatgpt-*/bin/*/codex 2>/dev/null); do
+  while IFS= read -r candidate; do
     if [ -x "$candidate" ]; then
       CODEX_BIN="$candidate"
       break
     fi
-  done
+  done < <(ls -t ~/.vscode/extensions/openai.chatgpt-*/bin/*/codex 2>/dev/null)
 fi
 
 if [ -z "$CODEX_BIN" ] || [ ! -x "$CODEX_BIN" ]; then
@@ -218,7 +219,7 @@ rm -f "$WRAPPER"
 SCRIPT
 chmod +x "$WRAPPER"
 
-nohup "$WRAPPER" </dev/null >/dev/null 2>&1 &
+nohup "$WRAPPER" </dev/null >>"$LOG_FILE" 2>&1 &
 disown
 
 exit 0

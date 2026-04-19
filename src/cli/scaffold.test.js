@@ -171,11 +171,25 @@ describe('getFilesToScaffold', () => {
     );
   });
 
-  it('all current agents can judge (canJudge guard is forward-looking)', () => {
-    // All current agents have canJudge: true, so this validates the positive path.
-    // The canJudge guard exists for future agents that may not support judging.
-    const files = getFilesToScaffold({ builderAgent: 'claude', judgeAgent: 'codex' });
-    assert.ok(files.length > 0);
+  it('rejects copilot as builder agent', () => {
+    assert.throws(
+      () => getFilesToScaffold({ builderAgent: 'copilot', judgeAgent: 'codex' }),
+      /cannot be used as builder/,
+    );
+  });
+
+  it('rejects non-string agent IDs', () => {
+    assert.throws(
+      () => getFilesToScaffold({ builderAgent: 42, judgeAgent: 'codex' }),
+      /must be a string/,
+    );
+  });
+
+  it('rejects prototype property names as agent IDs', () => {
+    assert.throws(
+      () => getFilesToScaffold({ builderAgent: 'constructor', judgeAgent: 'codex' }),
+      /Unknown builder agent/,
+    );
   });
 
   it('codex judge includes CODEX.md but not judge subagent or loop.review', () => {
@@ -288,10 +302,25 @@ describe('getNextSteps', () => {
     );
   });
 
-  it('throws when judge agent lacks canJudge capability (forward-looking)', () => {
-    // All current agents can judge; validates the positive path
-    const lines = getNextSteps({ builderAgent: 'claude', judgeAgent: 'codex' });
-    assert.ok(lines.length > 0);
+  it('rejects copilot as builder agent', () => {
+    assert.throws(
+      () => getNextSteps({ builderAgent: 'copilot', judgeAgent: 'codex' }),
+      /cannot be used as builder/,
+    );
+  });
+
+  it('rejects non-string agent IDs', () => {
+    assert.throws(
+      () => getNextSteps({ builderAgent: 42, judgeAgent: 'codex' }),
+      /must be a string/,
+    );
+  });
+
+  it('rejects prototype property names as agent IDs', () => {
+    assert.throws(
+      () => getNextSteps({ builderAgent: 'constructor', judgeAgent: 'codex' }),
+      /Unknown builder agent/,
+    );
   });
 });
 
