@@ -25,7 +25,7 @@ The CLI hardcodes Claude as builder and Codex as judge (or Claude as both in sin
 
 - **Builder**: Claude-only, no builder selection prompt
 - **New judge agents**: Copilot only
-- **UX**: Replace single/dual mode prompt with builder + judge selection
+- **UX**: Replace single/dual mode prompt with judge selection (builder remains Claude-only)
 - **`agent_mode`**: Keep as computed field for backwards compat
 
 This means: 3 judge options (Claude, Codex, Copilot), 1 builder (Claude), 1 new template file.

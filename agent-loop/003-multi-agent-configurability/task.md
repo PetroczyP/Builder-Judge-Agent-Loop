@@ -26,7 +26,7 @@ See `specs/003-multi-agent-configurability/spec.md` for full AC list (AC-1 throu
 
 ## Phase
 
-build (implementation complete, pending judge review)
+release (round 2 accepted)
 
 ## Spec Path
 

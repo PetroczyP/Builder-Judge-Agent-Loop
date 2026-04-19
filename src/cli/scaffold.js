@@ -161,13 +161,17 @@ async function gatherConfig(flags) {
         name: id,
         message: id === 'claude' ? `${a.displayName} (same agent judges)` : a.displayName,
       }));
+    const defaultJudgeIndex = Math.max(
+      0,
+      judgeChoices.findIndex((choice) => choice.name === defaults.judgeAgent),
+    );
 
     ({ judgeAgent } = await enquirer.prompt({
       type: 'select',
       name: 'judgeAgent',
       message: 'Judge agent',
       choices: judgeChoices,
-      initial: 0,
+      initial: defaultJudgeIndex,
     }));
 
     answers = await enquirer.prompt([
