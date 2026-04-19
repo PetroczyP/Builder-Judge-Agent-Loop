@@ -73,6 +73,21 @@ describe('normalizeConfig', () => {
   it('preserves existing judgeAgent if present (even in single mode)', () => {
     const result = normalizeConfig({ agent_mode: 'single', judge: 'codex' });
     assert.equal(result.judgeAgent, 'codex');
+    // agentMode recomputed to match actual agents
+    assert.equal(result.agentMode, 'dual');
+  });
+
+  it('handles copilot as judge agent', () => {
+    const result = normalizeConfig({ builder: 'claude', judge: 'copilot' });
+    assert.equal(result.builderAgent, 'claude');
+    assert.equal(result.judgeAgent, 'copilot');
+    assert.equal(result.agentMode, 'dual');
+  });
+
+  it('recomputes agentMode from agents (not from stored value)', () => {
+    // Stored agent_mode says dual, but agents are same → should be single
+    const result = normalizeConfig({ agent_mode: 'dual', builder: 'claude', judge: 'claude' });
+    assert.equal(result.agentMode, 'single');
   });
 
   it('handles undefined input gracefully', () => {
@@ -85,6 +100,62 @@ describe('normalizeConfig', () => {
     const result = normalizeConfig(null);
     assert.equal(result.agentMode, CONFIG_DEFAULTS.agentMode);
     assert.equal(result.judgeAgent, 'codex');
+  });
+
+  it('rejects explicit null judge (not silently inferred)', () => {
+    assert.throws(
+      () => normalizeConfig({ judge: null }),
+      (err) => err.message.includes('Invalid judge agent'),
+    );
+  });
+
+  it('rejects explicit empty-string judge (not silently inferred)', () => {
+    assert.throws(
+      () => normalizeConfig({ judge: '' }),
+      (err) => err.message.includes('Invalid judge agent'),
+    );
+  });
+
+  it('rejects false as judge value (not silently inferred)', () => {
+    assert.throws(
+      () => normalizeConfig({ judge: false }),
+      (err) => err.message.includes('Invalid judge agent'),
+    );
+  });
+
+  it('rejects 0 as judge value (not silently inferred)', () => {
+    assert.throws(
+      () => normalizeConfig({ judge: 0 }),
+      (err) => err.message.includes('Invalid judge agent'),
+    );
+  });
+
+  it('throws on invalid builder agent', () => {
+    assert.throws(
+      () => normalizeConfig({ builder: 'gpt4' }),
+      (err) => err.message.includes('Invalid builder agent "gpt4"'),
+    );
+  });
+
+  it('throws when builder agent lacks canBuild capability', () => {
+    assert.throws(
+      () => normalizeConfig({ builder: 'codex' }),
+      (err) => err.message.includes('cannot be used as builder'),
+    );
+  });
+
+  it('throws when builder agent copilot lacks canBuild capability', () => {
+    assert.throws(
+      () => normalizeConfig({ builder: 'copilot' }),
+      (err) => err.message.includes('cannot be used as builder'),
+    );
+  });
+
+  it('throws on invalid judge agent', () => {
+    assert.throws(
+      () => normalizeConfig({ judge: 'gemini' }),
+      (err) => err.message.includes('Invalid judge agent "gemini"'),
+    );
   });
 
   it('passes through fields not in the mapping', () => {

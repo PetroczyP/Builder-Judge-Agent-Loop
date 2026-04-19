@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { AGENTS } from './agents.js';
 
 const CONFIG_FILE = '.dual-agent-loop.json';
 
@@ -48,9 +49,45 @@ export function normalizeConfig(stored) {
     }
   }
 
+  // Infer judgeAgent from agentMode ONLY for old configs that omit the judge field entirely.
+  // Any explicit value (even null, "", false, 0) passes through to validation below.
   if (out.judgeAgent === undefined) {
     out.judgeAgent = out.agentMode === 'single' ? 'claude' : 'codex';
   }
+
+  // Validate agent IDs and capabilities against the registry
+  const validAgents = Object.keys(AGENTS).join(', ');
+  if (!AGENTS[out.builderAgent]) {
+    throw new Error(
+      `Invalid builder agent "${out.builderAgent}" in config. Valid agents: ${validAgents}`,
+    );
+  }
+  if (!AGENTS[out.builderAgent].canBuild) {
+    const builders = Object.entries(AGENTS)
+      .filter(([, a]) => a.canBuild)
+      .map(([id]) => id)
+      .join(', ');
+    throw new Error(
+      `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${builders}`,
+    );
+  }
+  if (!AGENTS[out.judgeAgent]) {
+    throw new Error(
+      `Invalid judge agent "${out.judgeAgent}" in config. Valid agents: ${validAgents}`,
+    );
+  }
+  if (!AGENTS[out.judgeAgent].canJudge) {
+    const judges = Object.entries(AGENTS)
+      .filter(([, a]) => a.canJudge)
+      .map(([id]) => id)
+      .join(', ');
+    throw new Error(
+      `Agent "${out.judgeAgent}" cannot be used as judge. Agents that can judge: ${judges}`,
+    );
+  }
+
+  // Recompute agentMode to match actual agents (agentMode is derived, not primary)
+  out.agentMode = out.builderAgent === out.judgeAgent ? 'single' : 'dual';
 
   return out;
 }

@@ -126,14 +126,16 @@ export async function scaffold(flags) {
 async function gatherConfig(flags) {
   const defaults = {
     coordinator: getGitUserName() || 'Coordinator',
-    agentMode: 'dual',
     builderAgent: 'claude',
     judgeAgent: 'codex',
     releaseMode: 'github-pr',
     maxRounds: 5,
   };
 
-  if (flags.nonInteractive) return defaults;
+  if (flags.nonInteractive) {
+    const agentMode = defaults.builderAgent === defaults.judgeAgent ? 'single' : 'dual';
+    return { ...defaults, agentMode };
+  }
 
   let Enquirer;
   try {
@@ -141,22 +143,26 @@ async function gatherConfig(flags) {
   } catch (err) {
     if (err.code === 'ERR_MODULE_NOT_FOUND' || err.code === 'MODULE_NOT_FOUND') {
       console.log('  (using defaults — install enquirer for interactive prompts)\n');
-      return defaults;
+      const agentMode = defaults.builderAgent === defaults.judgeAgent ? 'single' : 'dual';
+      return { ...defaults, agentMode };
     }
     throw err;
   }
 
   const enquirer = new Enquirer();
 
-  let agentMode, answers;
+  let judgeAgent, answers;
   try {
-    ({ agentMode } = await enquirer.prompt({
+    console.log('  Builder: Claude Code\n');
+
+    ({ judgeAgent } = await enquirer.prompt({
       type: 'select',
-      name: 'agentMode',
-      message: 'Agent setup',
+      name: 'judgeAgent',
+      message: 'Judge agent',
       choices: [
-        { name: 'dual', message: 'Dual agent (Claude Code builds, Codex judges)' },
-        { name: 'single', message: 'Single agent (Claude Code plays both roles)' },
+        { name: 'codex', message: 'Codex CLI' },
+        { name: 'claude', message: 'Claude Code (same agent judges)' },
+        { name: 'copilot', message: 'GitHub Copilot' },
       ],
       initial: 0,
     }));
@@ -192,7 +198,7 @@ async function gatherConfig(flags) {
   }
 
   const builderAgent = 'claude';
-  const judgeAgent = agentMode === 'single' ? 'claude' : 'codex';
+  const agentMode = builderAgent === judgeAgent ? 'single' : 'dual';
 
   return {
     coordinator: answers.coordinator || defaults.coordinator,

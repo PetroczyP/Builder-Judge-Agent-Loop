@@ -12,6 +12,9 @@ export const AGENTS = Object.freeze({
     builderCommandHint: '/loop.build new <describe task>',
     judgeCommand: '/loop.review <task-id>',
     judgeInvokeInstruction: 'Run `/loop.review <task-id>`',
+    judgeTemplate: 'agents/claude-judge.md',
+    judgeDestination: '.claude/agents/judge.md',
+    needsReviewCommand: true,
   }),
   codex: Object.freeze({
     displayName: 'Codex',
@@ -21,6 +24,21 @@ export const AGENTS = Object.freeze({
     builderCommandHint: null,
     judgeCommand: 'judge <task-id>',
     judgeInvokeInstruction: 'Send to Codex with `judge <task-id>`',
+    judgeTemplate: 'agents/CODEX.md',
+    judgeDestination: 'CODEX.md',
+    needsReviewCommand: false,
+  }),
+  copilot: Object.freeze({
+    displayName: 'GitHub Copilot',
+    id: 'copilot',
+    canBuild: false,
+    canJudge: true,
+    builderCommandHint: null,
+    judgeCommand: 'judge <task-id>',
+    judgeInvokeInstruction: 'Ask Copilot to review with `judge <task-id>`',
+    judgeTemplate: 'agents/copilot-judge.md',
+    judgeDestination: '.github/copilot-instructions.md',
+    needsReviewCommand: false,
   }),
 });
 
@@ -30,9 +48,7 @@ export const AGENTS = Object.freeze({
  * and agent-specific vars (names, IDs, commands).
  */
 export function getTemplateVars(config) {
-  const { agentMode, builderAgent, judgeAgent } = config;
-
-  if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
+  const { builderAgent, judgeAgent } = config;
 
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
@@ -42,7 +58,7 @@ export function getTemplateVars(config) {
   if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
 
   const judgeName =
-    agentMode === 'single' ? `${judge.displayName} (judge mode)` : judge.displayName;
+    builderAgent === judgeAgent ? `${judge.displayName} (judge mode)` : judge.displayName;
 
   return {
     // Core vars
@@ -62,14 +78,18 @@ export function getTemplateVars(config) {
 /**
  * Return the file list to scaffold for the given agent configuration.
  * Each entry: { src: template path, dest: output path relative to cwd }
+ * File selection is driven by the judge agent's registry entry.
  */
-const VALID_MODES = new Set(['single', 'dual']);
-
 export function getFilesToScaffold(config) {
-  const { agentMode } = config;
-  if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
+  const { builderAgent, judgeAgent } = config;
+  const builder = AGENTS[builderAgent];
+  if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
+  if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
+  const judge = AGENTS[judgeAgent];
+  if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
+  if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
 
-  const common = [
+  const files = [
     { src: 'protocol/PROTOCOL.md', dest: 'agent-loop/PROTOCOL.md' },
     { src: 'protocol/ANTIPATTERNS.md', dest: 'agent-loop/ANTIPATTERNS.md' },
     { src: 'commands/loop.build.md', dest: '.claude/commands/loop.build.md' },
@@ -79,37 +99,30 @@ export function getFilesToScaffold(config) {
     { src: 'agents/AGENTS.md', dest: 'AGENTS.md' },
     { src: 'agents/CHEATSHEET.md', dest: 'CHEATSHEET.md' },
     { src: 'task/backlog.md', dest: 'specs/backlog.md' },
+    { src: judge.judgeTemplate, dest: judge.judgeDestination },
   ];
 
-  if (agentMode === 'single') {
-    return [
-      ...common,
-      { src: 'agents/claude-judge.md', dest: '.claude/agents/judge.md' },
-      { src: 'commands/loop.review.md', dest: '.claude/commands/loop.review.md' },
-    ];
+  if (judge.needsReviewCommand) {
+    files.push({ src: 'commands/loop.review.md', dest: '.claude/commands/loop.review.md' });
   }
 
-  // dual mode (default)
-  return [...common, { src: 'agents/CODEX.md', dest: 'CODEX.md' }];
+  return files;
 }
 
 /**
  * Return the "next steps" console output lines for the given configuration.
  */
 export function getNextSteps(config) {
-  const { agentMode } = config;
-  if (!VALID_MODES.has(agentMode)) throw new Error(`Unsupported agent mode: "${agentMode}"`);
-
   const { builderAgent, judgeAgent } = config;
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
   if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
   if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
 
-  if (agentMode === 'single') {
+  if (builderAgent === judgeAgent) {
     return [
       '  Next steps:',
-      `    1. Review ${builder.id.toUpperCase()}.md and .${builder.id}/agents/judge.md`,
+      `    1. Review CLAUDE.md and ${judge.judgeDestination}`,
       `    2. ${builder.builderCommandHint}`,
       `    3. When ready for review: ${judge.judgeCommand}`,
     ];
@@ -117,7 +130,7 @@ export function getNextSteps(config) {
 
   return [
     '  Next steps:',
-    `    1. Review ${builder.id.toUpperCase()}.md and ${judge.id.toUpperCase()}.md`,
+    `    1. Review CLAUDE.md and ${judge.judgeDestination}`,
     `    2. In ${builder.displayName}: ${builder.builderCommandHint}`,
     `    3. In ${judge.displayName}: ${judge.judgeCommand}`,
   ];
@@ -129,9 +142,9 @@ export function getNextSteps(config) {
  * who have no `managed_files` or `file_hashes` to compare against.
  *
  * When a file is removed from getFilesToScaffold(), add an entry here
- * with the version it was removed in, which modes it applied to, and
- * its destination path.
+ * with the version it was removed in, which judge agents it applied to,
+ * and its destination path.
  *
- * @type {ReadonlyArray<{version: string, modes: string[], dest: string}>}
+ * @type {ReadonlyArray<{version: string, judgeAgents: string[], dest: string}>}
  */
 export const REMOVED_TEMPLATES = Object.freeze([]);

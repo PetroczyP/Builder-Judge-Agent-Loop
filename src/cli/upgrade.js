@@ -54,7 +54,7 @@ export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkg
 
     handleClaudeMd(cwd, vars);
 
-    const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.agentMode);
+    const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.judgeAgent);
     handleRemovedFiles(removed, config, pendingHashes, fileHashes, cwd);
 
     writeConfig(
@@ -164,7 +164,7 @@ export async function upgrade({ cwd, flags, config, promptFn, mergePromptFn, pkg
   handleClaudeMd(cwd, vars);
 
   // Step 6: Removed-file detection
-  const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.agentMode);
+  const removed = detectRemovedFiles(config, currentManagedSet, cwd, normalized.judgeAgent);
   handleRemovedFiles(removed, config, pendingHashes, fileHashes, cwd);
 
   // Step 7: Merge wizard
@@ -231,7 +231,7 @@ function handleClaudeMd(cwd, vars) {
   }
 }
 
-function detectRemovedFiles(config, currentManagedSet, cwd, agentMode) {
+function detectRemovedFiles(config, currentManagedSet, cwd, judgeAgent) {
   const filter = (list) => list.filter((dest) => !currentManagedSet.has(dest));
 
   if (Array.isArray(config.managed_files) && config.managed_files.length > 0) {
@@ -245,10 +245,10 @@ function detectRemovedFiles(config, currentManagedSet, cwd, agentMode) {
   ) {
     return filter(Object.keys(config.file_hashes));
   }
-  // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by mode
+  // Pre-hash user with neither — fall back to REMOVED_TEMPLATES filtered by judge agent
   return filter(
     REMOVED_TEMPLATES.filter(
-      (r) => r.modes.includes(agentMode) && existsSync(join(cwd, r.dest)),
+      (r) => r.judgeAgents.includes(judgeAgent) && existsSync(join(cwd, r.dest)),
     ).map((r) => r.dest),
   );
 }

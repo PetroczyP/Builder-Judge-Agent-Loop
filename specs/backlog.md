@@ -37,3 +37,4 @@ Use `/loop.backlog pick <number>` to promote an item to a task.
 |---|-------------|---------|--------|
 | - | Single-agent mode — one agent plays both builder and judge roles | 001-single-agent-mode | 2026-03-20 |
 | 12 | Protocol enforcement improvements | 002-protocol-enforcement | 2026-03-22 |
+| 1 | Multi-agent configurability | 003-multi-agent-configurability | 2026-04-16 |
