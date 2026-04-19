@@ -6,7 +6,8 @@ const CONFIG_FILE = '.dual-agent-loop.json';
 
 /**
  * Default configuration values (camelCase, internal format).
- * Does NOT include judgeAgent — that depends on agentMode.
+ * Does NOT include judgeAgent — inferred from agentMode for backward
+ * compatibility with pre-v0.4 configs; agentMode itself is derived, not primary.
  */
 export const CONFIG_DEFAULTS = Object.freeze({
   coordinator: 'Coordinator',
@@ -26,7 +27,9 @@ const SNAKE_TO_CAMEL = {
 
 /**
  * Convert a snake_case stored config to camelCase internal format.
- * Applies CONFIG_DEFAULTS for missing fields and infers judgeAgent from agentMode.
+ * Applies CONFIG_DEFAULTS for missing fields. For backward compatibility,
+ * infers judgeAgent from agentMode when the judge field is absent;
+ * then recomputes agentMode from the actual agent pair.
  * @param {object|null|undefined} stored
  * @returns {object}
  */

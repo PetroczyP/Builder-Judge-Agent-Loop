@@ -171,10 +171,9 @@ describe('getFilesToScaffold', () => {
     );
   });
 
-  it('throws when judge agent lacks canJudge capability', () => {
-    // claude has canJudge: true, so we need an agent with canJudge: false
-    // All current agents can judge, so this test validates the check exists
-    // by verifying a valid config does NOT throw
+  it('all current agents can judge (canJudge guard is forward-looking)', () => {
+    // All current agents have canJudge: true, so this validates the positive path.
+    // The canJudge guard exists for future agents that may not support judging.
     const files = getFilesToScaffold({ builderAgent: 'claude', judgeAgent: 'codex' });
     assert.ok(files.length > 0);
   });
@@ -280,6 +279,19 @@ describe('getNextSteps', () => {
       () => getNextSteps({ builderAgent: 'claude', judgeAgent: 'unknown' }),
       /Unknown judge agent/,
     );
+  });
+
+  it('throws when builder agent lacks canBuild capability', () => {
+    assert.throws(
+      () => getNextSteps({ builderAgent: 'codex', judgeAgent: 'codex' }),
+      /cannot be used as builder/,
+    );
+  });
+
+  it('throws when judge agent lacks canJudge capability (forward-looking)', () => {
+    // All current agents can judge; validates the positive path
+    const lines = getNextSteps({ builderAgent: 'claude', judgeAgent: 'codex' });
+    assert.ok(lines.length > 0);
   });
 });
 

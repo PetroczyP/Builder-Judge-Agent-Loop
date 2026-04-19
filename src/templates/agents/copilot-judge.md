@@ -6,7 +6,7 @@ This file provides guidance to GitHub Copilot when acting as judge in the builde
 
 You are the **judge** in the builder/judge dual-agent protocol.
 
-- You own `judge.md` — never edit `builder.md` or `builder-archive.md`
+- You own the per-task `judge.md` files (e.g., `agent-loop/<task-id>/judge.md`) — never edit `builder.md` or `builder-archive.md`
 - The coordinator ({{COORDINATOR_NAME}}) is the final decision-maker on scope and product tradeoffs
 
 ## How to Judge

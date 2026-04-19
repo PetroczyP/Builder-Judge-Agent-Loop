@@ -117,7 +117,9 @@ export function getNextSteps(config) {
   const builder = AGENTS[builderAgent];
   const judge = AGENTS[judgeAgent];
   if (!builder) throw new Error(`Unknown builder agent: "${builderAgent}"`);
+  if (!builder.canBuild) throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
   if (!judge) throw new Error(`Unknown judge agent: "${judgeAgent}"`);
+  if (!judge.canJudge) throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
 
   if (builderAgent === judgeAgent) {
     return [
