@@ -197,7 +197,7 @@ describe('normalizeConfig integration with agent functions', () => {
   // Lazy import to keep config.test.js focused; this is a cross-module integration test
   let getFilesToScaffold;
   before(async () => {
-    ({ getFilesToScaffold } = await import('../cli/../utils/agents.js'));
+    ({ getFilesToScaffold } = await import('./agents.js'));
   });
 
   it('normalizeConfig output is accepted by getFilesToScaffold for all judge agents', () => {
