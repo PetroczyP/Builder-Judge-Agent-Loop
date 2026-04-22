@@ -43,30 +43,50 @@ export const AGENTS = Object.freeze({
 });
 
 /**
+ * Return IDs of agents that satisfy a capability (single source of truth
+ * for filtering the registry by role).
+ * @param {'canBuild'|'canJudge'} capability
+ * @returns {string[]}
+ */
+export function listAgentsWithCapability(capability) {
+  return Object.entries(AGENTS)
+    .filter(([, a]) => a[capability])
+    .map(([id]) => id);
+}
+
+/**
  * Validate a builder/judge agent pair against the registry.
  * Uses Object.hasOwn to avoid prototype chain lookups (e.g., 'constructor').
+ * Errors carry a `.code` (BUILDER_TYPE, UNKNOWN_BUILDER, BUILDER_NOT_CAPABLE,
+ * JUDGE_TYPE, UNKNOWN_JUDGE, JUDGE_NOT_CAPABLE) so callers can produce
+ * context-appropriate error messages without duplicating check logic.
  * @returns {{ builder: object, judge: object }}
  */
-function validateAgentPair(builderAgent, judgeAgent) {
+export function validateAgentPair(builderAgent, judgeAgent) {
+  const fail = (code, message) => {
+    const err = new Error(message);
+    err.code = code;
+    throw err;
+  };
   if (typeof builderAgent !== 'string') {
-    throw new Error(`Builder agent must be a string, got ${typeof builderAgent}`);
+    fail('BUILDER_TYPE', `Builder agent must be a string, got ${typeof builderAgent}`);
   }
   if (typeof judgeAgent !== 'string') {
-    throw new Error(`Judge agent must be a string, got ${typeof judgeAgent}`);
+    fail('JUDGE_TYPE', `Judge agent must be a string, got ${typeof judgeAgent}`);
   }
   if (!Object.hasOwn(AGENTS, builderAgent)) {
-    throw new Error(`Unknown builder agent: "${builderAgent}"`);
+    fail('UNKNOWN_BUILDER', `Unknown builder agent: "${builderAgent}"`);
   }
   const builder = AGENTS[builderAgent];
   if (!builder.canBuild) {
-    throw new Error(`Agent "${builderAgent}" cannot be used as builder`);
+    fail('BUILDER_NOT_CAPABLE', `Agent "${builderAgent}" cannot be used as builder`);
   }
   if (!Object.hasOwn(AGENTS, judgeAgent)) {
-    throw new Error(`Unknown judge agent: "${judgeAgent}"`);
+    fail('UNKNOWN_JUDGE', `Unknown judge agent: "${judgeAgent}"`);
   }
   const judge = AGENTS[judgeAgent];
   if (!judge.canJudge) {
-    throw new Error(`Agent "${judgeAgent}" cannot be used as judge`);
+    fail('JUDGE_NOT_CAPABLE', `Agent "${judgeAgent}" cannot be used as judge`);
   }
   return { builder, judge };
 }

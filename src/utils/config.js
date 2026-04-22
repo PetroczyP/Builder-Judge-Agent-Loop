@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { AGENTS } from './agents.js';
+import { AGENTS, listAgentsWithCapability, validateAgentPair } from './agents.js';
 
 const CONFIG_FILE = '.dual-agent-loop.json';
 
@@ -64,36 +64,41 @@ export function normalizeConfig(stored) {
     out.judgeAgent = out.agentMode === 'single' ? 'claude' : 'codex';
   }
 
-  // Validate agent IDs and capabilities against the registry.
-  // Uses Object.hasOwn to avoid prototype chain lookups (e.g., 'constructor').
-  const validAgents = Object.keys(AGENTS).join(', ');
-  const validBuilders = Object.entries(AGENTS)
-    .filter(([, a]) => a.canBuild)
-    .map(([id]) => id)
-    .join(', ');
-  if (typeof out.builderAgent !== 'string' || !Object.hasOwn(AGENTS, out.builderAgent)) {
-    throw new Error(
-      `Invalid builder agent "${out.builderAgent}" in config. Valid builder agents: ${validBuilders}`,
-    );
-  }
-  if (!AGENTS[out.builderAgent].canBuild) {
-    throw new Error(
-      `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${validBuilders}`,
-    );
-  }
-  if (typeof out.judgeAgent !== 'string' || !Object.hasOwn(AGENTS, out.judgeAgent)) {
-    throw new Error(
-      `Invalid judge agent "${out.judgeAgent}" in config. Valid agents: ${validAgents}`,
-    );
-  }
-  if (!AGENTS[out.judgeAgent].canJudge) {
-    const judges = Object.entries(AGENTS)
-      .filter(([, a]) => a.canJudge)
-      .map(([id]) => id)
-      .join(', ');
-    throw new Error(
-      `Agent "${out.judgeAgent}" cannot be used as judge. Agents that can judge: ${judges}`,
-    );
+  // Delegate check logic to validateAgentPair (single source of truth),
+  // then translate its coded errors into user-facing messages that list
+  // valid alternatives from the registry.
+  try {
+    validateAgentPair(out.builderAgent, out.judgeAgent);
+  } catch (err) {
+    const validBuilders = listAgentsWithCapability('canBuild').join(', ');
+    const validJudges = listAgentsWithCapability('canJudge').join(', ');
+    const allAgents = Object.keys(AGENTS).join(', ');
+    switch (err.code) {
+      case 'BUILDER_TYPE':
+      case 'UNKNOWN_BUILDER':
+        throw new Error(
+          `Invalid builder agent "${out.builderAgent}" in config. Valid builder agents: ${validBuilders}`,
+          { cause: err },
+        );
+      case 'BUILDER_NOT_CAPABLE':
+        throw new Error(
+          `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${validBuilders}`,
+          { cause: err },
+        );
+      case 'JUDGE_TYPE':
+      case 'UNKNOWN_JUDGE':
+        throw new Error(
+          `Invalid judge agent "${out.judgeAgent}" in config. Valid agents: ${allAgents}`,
+          { cause: err },
+        );
+      case 'JUDGE_NOT_CAPABLE':
+        throw new Error(
+          `Agent "${out.judgeAgent}" cannot be used as judge. Agents that can judge: ${validJudges}`,
+          { cause: err },
+        );
+      default:
+        throw err;
+    }
   }
 
   // Recompute agentMode to match actual agents (agentMode is derived, not primary)
