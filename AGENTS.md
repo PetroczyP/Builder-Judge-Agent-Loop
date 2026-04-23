@@ -30,7 +30,7 @@ specs/                          → backlog and feature specs
 
 **Template system**: Simple `split(key).join(value)` replacement — no template engine. Variables use `{{UPPER_SNAKE_CASE}}`. Null/undefined values throw immediately (fail-fast). See [scaffold.js loadTemplate()](src/cli/scaffold.js) for implementation.
 
-**Agent modes**: `dual` (Claude Code builds, Codex judges → scaffolds `CODEX.md`) or `single` (Claude Code plays both roles → scaffolds `.claude/agents/judge.md`).
+**Agent selection**: Claude Code is always the builder. The judge is chosen during setup: Codex (scaffolds `CODEX.md`), GitHub Copilot (scaffolds `.github/copilot-instructions.md`), or Claude Code itself (scaffolds `.claude/agents/judge.md` + review command). The `agent_mode` config field (`dual`/`single`) is computed from whether builder and judge are the same agent.
 
 ## Build and Test
 

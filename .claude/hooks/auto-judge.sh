@@ -81,14 +81,37 @@ if [ -f "$MARKER" ]; then
 fi
 touch "$MARKER"
 
-# Find the Codex CLI binary (bundled with VS Code extension)
-CODEX_BIN="${CODEX_CLI:-}"
+# Find the Codex CLI binary — try multiple sources in priority order:
+#   1. CODEX_CLI env var (if set AND the binary still exists)
+#   2. `codex` on PATH (e.g. Homebrew — most stable, survives extension updates)
+#   3. VS Code extension directory (newest first, check each for executability)
+# This avoids breakage when VS Code updates extensions and the old
+# versioned directory is deleted (the CODEX_CLI env var goes stale).
+CODEX_BIN=""
+
+# Tier 1: Explicit env var override (only if the binary actually exists)
+if [ -n "${CODEX_CLI:-}" ] && [ -x "$CODEX_CLI" ]; then
+  CODEX_BIN="$CODEX_CLI"
+fi
+
+# Tier 2: PATH lookup (Homebrew, npm global, etc. — stable across updates)
+if [ -z "$CODEX_BIN" ] && command -v codex >/dev/null 2>&1; then
+  CODEX_BIN=$(command -v codex)
+fi
+
+# Tier 3: VS Code extension paths (newest first, verify each is executable)
+# Uses while-read to handle paths with spaces safely.
 if [ -z "$CODEX_BIN" ]; then
-  CODEX_BIN=$(ls -t ~/.vscode/extensions/openai.chatgpt-*/bin/*/codex 2>/dev/null | head -1)
+  while IFS= read -r candidate; do
+    if [ -x "$candidate" ]; then
+      CODEX_BIN="$candidate"
+      break
+    fi
+  done < <(ls -t ~/.vscode/extensions/openai.chatgpt-*/bin/*/codex 2>/dev/null)
 fi
 
 if [ -z "$CODEX_BIN" ] || [ ! -x "$CODEX_BIN" ]; then
-  echo "WARNING: Codex CLI not found. Set CODEX_CLI env var or install the Codex VS Code extension." >&2
+  echo "WARNING: Codex CLI not found. Install via Homebrew (brew install codex), set CODEX_CLI env var, or install the Codex VS Code extension." >&2
   rm -f "$MARKER"
   exit 0
 fi
@@ -196,7 +219,7 @@ rm -f "$WRAPPER"
 SCRIPT
 chmod +x "$WRAPPER"
 
-nohup "$WRAPPER" </dev/null >/dev/null 2>&1 &
+nohup "$WRAPPER" </dev/null >>"$LOG_FILE" 2>&1 &
 disown
 
 exit 0

@@ -1,11 +1,14 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { AGENTS, listAgentsWithCapability, validateAgentPair } from './agents.js';
 
 const CONFIG_FILE = '.dual-agent-loop.json';
 
 /**
  * Default configuration values (camelCase, internal format).
- * Does NOT include judgeAgent — that depends on agentMode.
+ * Does NOT include judgeAgent — inferred from agentMode for backward
+ * compatibility with configs that predate the explicit judge field;
+ * agentMode itself is derived, not primary.
  */
 export const CONFIG_DEFAULTS = Object.freeze({
   coordinator: 'Coordinator',
@@ -15,17 +18,19 @@ export const CONFIG_DEFAULTS = Object.freeze({
   maxRounds: 5,
 });
 
-const SNAKE_TO_CAMEL = {
+const SNAKE_TO_CAMEL = Object.freeze({
   agent_mode: 'agentMode',
   builder: 'builderAgent',
   judge: 'judgeAgent',
   release_mode: 'releaseMode',
   max_rounds: 'maxRounds',
-};
+});
 
 /**
  * Convert a snake_case stored config to camelCase internal format.
- * Applies CONFIG_DEFAULTS for missing fields and infers judgeAgent from agentMode.
+ * Applies CONFIG_DEFAULTS for missing fields. For backward compatibility,
+ * infers judgeAgent from agentMode when the judge field is absent;
+ * then recomputes agentMode from the actual agent pair.
  * @param {object|null|undefined} stored
  * @returns {object}
  */
@@ -48,9 +53,56 @@ export function normalizeConfig(stored) {
     }
   }
 
+  // Infer judgeAgent from agentMode ONLY for old configs that omit the judge field entirely.
+  // Any explicit value (even null, "", false, 0) passes through to validation below.
   if (out.judgeAgent === undefined) {
+    if (out.agentMode !== 'single' && out.agentMode !== 'dual') {
+      console.warn(
+        `  Warning: unrecognized agent_mode "${out.agentMode}" in config — defaulting to dual`,
+      );
+    }
     out.judgeAgent = out.agentMode === 'single' ? 'claude' : 'codex';
   }
+
+  // Delegate check logic to validateAgentPair (single source of truth),
+  // then translate its coded errors into user-facing messages that list
+  // valid alternatives from the registry.
+  try {
+    validateAgentPair(out.builderAgent, out.judgeAgent);
+  } catch (err) {
+    const validBuilders = listAgentsWithCapability('canBuild').join(', ');
+    const validJudges = listAgentsWithCapability('canJudge').join(', ');
+    const allAgents = Object.keys(AGENTS).join(', ');
+    switch (err.code) {
+      case 'BUILDER_TYPE':
+      case 'UNKNOWN_BUILDER':
+        throw new Error(
+          `Invalid builder agent "${out.builderAgent}" in config. Valid builder agents: ${validBuilders}`,
+          { cause: err },
+        );
+      case 'BUILDER_NOT_CAPABLE':
+        throw new Error(
+          `Agent "${out.builderAgent}" cannot be used as builder. Agents that can build: ${validBuilders}`,
+          { cause: err },
+        );
+      case 'JUDGE_TYPE':
+      case 'UNKNOWN_JUDGE':
+        throw new Error(
+          `Invalid judge agent "${out.judgeAgent}" in config. Valid agents: ${allAgents}`,
+          { cause: err },
+        );
+      case 'JUDGE_NOT_CAPABLE':
+        throw new Error(
+          `Agent "${out.judgeAgent}" cannot be used as judge. Agents that can judge: ${validJudges}`,
+          { cause: err },
+        );
+      default:
+        throw err;
+    }
+  }
+
+  // Recompute agentMode to match actual agents (agentMode is derived, not primary)
+  out.agentMode = out.builderAgent === out.judgeAgent ? 'single' : 'dual';
 
   return out;
 }
