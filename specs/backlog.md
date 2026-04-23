@@ -30,6 +30,7 @@ Use `/loop.backlog pick <number>` to promote an item to a task.
 | 21 | Structured ideation command (`/loop.ideate`) — scan codebase, dispatch parallel ideation agents with different frames (user pain, inversion, assumption-breaking, leverage), apply adversarial filtering, output actionable improvements to `specs/ideation/` | competitor-review | P3 | 2026-04-12 |
 | 22 | AP-008: Monolithic Design Without Unit Boundaries — new anti-pattern for designs that produce no module/component boundaries or interface definitions; symptoms: files exceeding 300 lines with mixed responsibilities, no testability characteristics identified | competitor-review | P3 | 2026-04-12 |
 | 23 | Document the `upgrade` command in README.md — add to "Other commands" table, usage examples, explain three-way merge behavior for customized files | #13-remainder | P2 | 2026-04-12 |
+| 24 | Upgrade-path test for copilot judge — add integration test covering codex↔copilot judge switch via `upgrade --force`, exercising `managed_files` removal, `.new` sidecar behavior, and config normalization with `judge: copilot` | task-closure/003 | P3 | 2026-04-23 |
 
 ## Picked Up
 
