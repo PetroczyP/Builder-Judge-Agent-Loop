@@ -1,5 +1,9 @@
 # Task Closure — 003-multi-agent-configurability
 
+**Closed:** 2026-04-23
+**Final Phase:** release (round 2 accepted)
+**Total Rounds:** 11 across 6 phases (specify, design, plan, build, test, release)
+
 ## Delivered vs Planned
 
 | Planned | Delivered | Notes |
@@ -27,11 +31,11 @@
 | AC-10 | pass | Copilot template renders correctly |
 | AC-11 | pass | `REMOVED_TEMPLATES` uses `judgeAgents` |
 | AC-12 | pass | `detectRemovedFiles` filters by `judgeAgent` |
-| AC-13 | pass | 239 tests pass, lint clean, format clean |
+| AC-13 | pass | 246 tests pass, lint clean, format clean |
 
 ## Test Summary
 
-- **239 tests**, 0 failures, 72 suites
+- **246 tests**, 0 failures, 73 suites (7 added during PR review)
 - **56 task-specific tests**: 38 in scaffold.test.js, 18 in config.test.js
 - Edge cases: capability enforcement, falsy rejection (null/""/false/0), registry immutability, template completeness, file existence, backwards compat
 
@@ -44,4 +48,11 @@
 ## Deferred Items
 
 - Builder selection prompt (Gemini, Aider) — not in v1 scope
-- Upgrade test for copilot judge path (low risk, pr-test-analyzer suggestion rated 6/10)
+- Upgrade test for copilot judge path (low risk, pr-test-analyzer suggestion rated 6/10) → backlog #24
+
+## Released
+
+- **PR:** [#11 — feat: multi-agent configurability with Copilot judge support](https://github.com/PetroczyP/Builder-Judge-Agent-Loop/pull/11)
+- **Merge commit:** `7729099` on `main`
+- **Tag:** `v0.3.0`
+- **PR review cycles:** 3 rounds post-merge-request. Fixes: interactive prompt honors default judge agent, scope-wording clarified in spec, builder-validation errors list only build-capable agents, agent validation logic centralized in `validateAgentPair` with coded errors (`BUILDER_TYPE`, `UNKNOWN_BUILDER`, `BUILDER_NOT_CAPABLE`, `JUDGE_TYPE`, `UNKNOWN_JUDGE`, `JUDGE_NOT_CAPABLE`) so `normalizeConfig` delegates to a single source of truth.
